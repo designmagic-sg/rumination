@@ -71,11 +71,11 @@ The owner chose the game server.
 rumination/
   shared/   game rules as pure TypeScript, with tests: crops, items, recipes, prices, fish, animals, ores, quests, time, zones
   server/   Colyseus game server: one "room" per world, saving to SQLite
-  client/   Phaser 3 game in the browser, built with Vite
+  client/   Phaser 4 game in the browser, built with Vite
   art/      source sheets and the script that turns them into sprites
 ```
 
-- **Phaser 3** draws the game: tile maps, sprites, camera, input.
+- **Phaser 4** draws the game: tile maps, sprites, camera, input.
 - **Colyseus** handles rooms, joining by code and syncing state to every player.
 - **`shared/`** is used by both client and server, so the rules exist in one place. It has unit tests (Vitest), in the same spirit as the BellPals prototype's `src/domain/`.
 - **SQLite** holds the saved worlds while we build. We'd switch to Postgres when we host it.
@@ -165,7 +165,7 @@ rumination/
 - **Last quest:** forge the golden spear or the diamond rod. The reward is 3 Rafflesia seeds.
 - A locked zone sits behind a fence with a sign showing its quest. Unlocking plays a short animation and the fence disappears for everyone.
 
-**Expanding the world.** Each zone is its own map, drawn in Tiled (a free map editor), plus one entry in `shared/zones.ts` with its name, quest, edges, fish table and animal table. Adding land means adding a map and an entry.
+**Expanding the world.** Each zone is its own map, written as a text map in `shared/src/maps/` (one character per tile) so the server uses the same walls, plus one entry in the `ZONES` registry with its name, quest, edges, fish table and animal table. Adding land means adding a map and an entry.
 
 ### 6.8 Later: mobile and Steam
 
@@ -178,7 +178,7 @@ The pose sheets already have jump, sit and sleep. Keys **Z**, **X** and **C** pl
 
 ### 6.10 Running it
 
-- `npm install && npm run dev` starts the server and the client together. You play at `http://localhost:5173`.
+- `npm install`, then `npm run dev`, starts the server and the client together. You play at `http://localhost:5173`.
 - Friends on the same Wi-Fi can join through your computer's local address. Friends elsewhere need it hosted, which is a later step. (A tunnel such as `cloudflared` is a stop-gap.)
 
 ## 7. Build order

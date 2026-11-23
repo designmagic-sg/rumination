@@ -1,300 +1,339 @@
 <title>RumiNation Clock and Coin</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600&family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&family=VT323&display=swap">
 <style>
-/* Layout: a night-meadow page; each clock sits on a strip of in-game grass so it's judged where it will live. */
+/* Layout: a night-meadow page; every clock sits on a patch of the game's own grass so it's judged where it lives. */
 :root {
-  --ink: #1A1420;          /* page ground: deep plum night */
-  --panel: #241C2C;        /* raised panels */
-  --line: #3A2E44;
-  --text: #EFE6DA;
-  --muted: #B3A6B8;
-  --gold: #D9B45A;
-  --grass: #7FA36A;
-  --grass-dark: #5F8752;
-  --font-hud: "Pixelify Sans", "Courier New", monospace;
-  --font-head: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
-  --font-body: "Inter", "Segoe UI", system-ui, sans-serif;
+  --ink: #1A1420; --panel: #241C2C; --line: #3A2E44; --text: #EFE6DA; --muted: #B3A6B8; --gold: #F2C14E;
+  --grass: #B9D193; --grass-d: #9FBC7F;
+  --font: "Pixelify Sans", "Courier New", monospace; --code: "VT323", "Courier New", monospace;
   color-scheme: dark;
 }
 html { background: var(--ink); }
-body { background: var(--ink); color: var(--text); font-family: var(--font-body); font-size: 15px; line-height: 1.55; }
-.wrap { max-width: 1040px; margin: 0 auto; padding-block: 32px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 40px; }
-h1 { font-family: var(--font-hud); font-weight: 600; font-size: clamp(28px, 5vw, 44px); margin: 0; letter-spacing: 0.02em; color: var(--gold); }
-h2 { font-family: var(--font-head); font-size: 20px; margin: 0; text-wrap: balance; }
-p { margin: 0; max-width: 65ch; color: var(--muted); }
-.intro { display: grid; gap: 10px; }
-section { display: grid; gap: 18px; }
-.meadow {
-  background:
-    repeating-linear-gradient(90deg, transparent 0 14px, rgba(0,0,0,.06) 14px 16px),
-    repeating-linear-gradient(0deg, transparent 0 14px, rgba(0,0,0,.05) 14px 16px),
-    var(--grass);
-  border: 3px solid var(--grass-dark); border-radius: 6px; padding: 20px; position: relative; overflow: hidden;
-}
-.meadow .tint { position: absolute; inset: 0; background: #1B1F4A; pointer-events: none; transition: opacity .2s; }
-.hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: stretch; }
+body { background: var(--ink); color: var(--text); font-family: var(--font); font-variant-ligatures: none; font-size: 17px; line-height: 1.5; }
+.wrap { max-width: 1040px; margin: 0 auto; padding-block: 32px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 36px; }
+h1 { margin: 0; font-size: clamp(34px, 6vw, 52px); color: var(--gold); text-shadow: 0 4px 0 #412234; }
+h2 { margin: 0; font-size: 22px; font-weight: 600; text-wrap: balance; }
+p { margin: 0; max-width: 66ch; color: var(--muted); }
+section { display: grid; gap: 16px; }
+.meadow { background-color: var(--grass); border: 3px solid #412234; box-shadow: 0 4px 0 #412234; position: relative; overflow: hidden; image-rendering: pixelated; background-size: 48px 48px; }
+.tint { position: absolute; inset: 0; background: #1B1F4A; pointer-events: none; }
+.hero { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 20px; }
 @media (max-width: 720px) { .hero { grid-template-columns: minmax(0, 1fr); } }
-.hero .meadow { display: flex; justify-content: flex-end; align-items: flex-start; min-height: 330px; }
-.variant-label { position: absolute; left: 14px; bottom: 12px; font-family: var(--font-hud); font-size: 14px; color: #fff; text-shadow: 0 2px 0 rgba(0,0,0,.45); z-index: 2; }
-.clock { position: relative; z-index: 2; display: grid; justify-items: center; gap: 4px; }
-.clock svg, .clock canvas { display: block; width: 200px; height: 200px; max-width: 100%; }
-.clock canvas { image-rendering: pixelated; }
-.plaque { font-family: var(--font-hud); font-size: 16px; color: #F4E4BE; background: #2A2230; border: 2px solid var(--gold); border-radius: 4px; padding: 3px 12px 4px; box-shadow: 0 2px 0 rgba(0,0,0,.35); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.controls { display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; }
-.controls label { font-family: var(--font-head); font-size: 14px; color: var(--muted); }
+.hero .meadow { min-height: 300px; display: flex; justify-content: flex-end; align-items: flex-start; padding: 16px; }
+.clock { position: relative; z-index: 1; display: grid; justify-items: center; gap: 6px; }
+canvas { image-rendering: pixelated; display: block; }
+.plaque { font-family: var(--code); font-size: 24px; line-height: 1; color: #f4e4be; background: #2a2230; border: 3px solid var(--gold); box-shadow: 0 3px 0 #412234; padding: 2px 10px 3px; white-space: nowrap; }
+.big { display: grid; place-items: center; background: var(--panel); border: 1px solid var(--line); padding: 18px; gap: 10px; }
+.big figcaption { color: var(--muted); font-size: 15px; }
+.controls { display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: center; background: var(--panel); border: 1px solid var(--line); padding: 14px 16px; }
+.controls label { color: var(--muted); }
 #time { flex: 1 1 240px; min-width: 0; accent-color: var(--gold); }
-.readout { font-family: var(--font-hud); font-size: 18px; color: var(--gold); min-width: 5ch; font-variant-numeric: tabular-nums; }
-button { font-family: var(--font-head); font-size: 14px; font-weight: 700; color: var(--ink); background: var(--gold); border: 0; border-radius: 6px; padding: 8px 14px; cursor: pointer; }
-button:focus-visible, input:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.readout { font-family: var(--code); font-size: 26px; color: var(--gold); min-width: 5ch; }
+button { font-family: var(--font); font-size: 17px; font-weight: 700; color: #412234; background: var(--gold); border: 3px solid #412234; box-shadow: 0 3px 0 #000; padding: 6px 14px; cursor: pointer; }
+button:active { transform: translateY(2px); box-shadow: 0 1px 0 #000; }
+button:focus-visible, input:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
 .strip { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
 @media (max-width: 720px) { .strip { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-.strip .meadow { padding: 12px 6px; display: grid; justify-items: center; }
-.strip .clock svg { width: 132px; height: 132px; }
-.strip .plaque { font-size: 13px; }
-.coins { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
-@media (max-width: 720px) { .coins { grid-template-columns: minmax(0, 1fr); } }
-.coin-card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 18px; display: grid; gap: 16px; }
-.coin-card h3 { font-family: var(--font-head); font-size: 15px; margin: 0; color: var(--muted); font-weight: 500; }
-.coin-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 20px; }
-.coin-row figure { margin: 0; display: grid; justify-items: center; gap: 6px; }
-.coin-row figcaption { font-size: 12px; color: var(--muted); }
-.coin-row canvas { image-rendering: pixelated; }
-.purse { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-hud); font-size: 20px; color: #F4E4BE; background: #2A2230; border: 2px solid var(--gold); border-radius: 4px; padding: 4px 12px; font-variant-numeric: tabular-nums; }
-.notes { display: grid; gap: 8px; }
-.notes ul { margin: 0; padding-left: 20px; color: var(--muted); max-width: 70ch; }
-@media (prefers-reduced-motion: reduce) { .meadow .tint { transition: none; } }
+.strip .meadow { padding: 12px 4px; display: grid; justify-items: center; }
+.coins { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-end; background: var(--panel); border: 1px solid var(--line); padding: 20px; }
+.coins figure { margin: 0; display: grid; justify-items: center; gap: 8px; }
+.coins figcaption { font-size: 14px; color: var(--muted); }
+.purse { display: inline-flex; align-items: center; gap: 8px; font-family: var(--code); font-size: 26px; line-height: 1; color: #f4e4be; background: #2a2230; border: 3px solid var(--gold); padding: 4px 12px 4px 8px; }
+ul { margin: 0; padding-left: 22px; color: var(--muted); max-width: 70ch; }
 </style>
 
 <div class="wrap">
-  <header class="intro">
+  <header style="display:grid;gap:10px">
     <h1>RumiNation</h1>
-    <h2>The day clock and the Rumi coin</h2>
-    <p>The sun and moon ride an arm around a carved stone ring. Noon is at the top and midnight at the bottom. The sun comes up over the hills on the left at 06:00 and sets on the right at 18:00, and at night the moon takes its place. Each clock sits on a patch of in-game grass so you can judge it where it will be. Drag the slider or press play to run a whole day in 24 seconds.</p>
+    <h2>The day clock and the Rumi, as pixel art</h2>
+    <p>Redrawn pixel by pixel to match your characters: the same dark plum outline, flat two-tone colours and no smoothing. Noon is at the top and midnight at the bottom. The sun rises over the hills at 06:00 and sets at 18:00, then the moon, the stars and the little house's window come out. Drag the slider or play a day in 24 seconds.</p>
   </header>
 
-  <section aria-labelledby="h-clock">
-    <h2 id="h-clock">Two finishes to choose from</h2>
+  <section aria-labelledby="h1">
+    <h2 id="h1">In the game</h2>
     <div class="hero">
-      <div class="meadow" id="m-smooth"><div class="tint"></div><div class="clock" id="c-smooth"></div><span class="variant-label">A · Smooth gold</span></div>
-      <div class="meadow" id="m-pixel"><div class="tint"></div><div class="clock" id="c-pixel"></div><span class="variant-label">B · Pixel gold</span></div>
+      <div class="meadow" id="m1"><div class="tint" id="tint"></div><div class="clock"><canvas id="c-game"></canvas><div class="plaque" id="plaque"></div></div></div>
+      <figure class="big" style="margin:0"><canvas id="c-big"></canvas><figcaption>Close up, at 6×</figcaption></figure>
     </div>
     <div class="controls">
       <label for="time">Time</label>
       <input id="time" type="range" min="360" max="1560" step="1" value="1110">
-      <span class="readout" id="readout">18:30</span>
+      <span class="readout" id="readout"></span>
       <button id="play" type="button">Play a day</button>
     </div>
   </section>
 
-  <section aria-labelledby="h-strip">
-    <h2 id="h-strip">Through one day, at in-game size</h2>
+  <section aria-labelledby="h2">
+    <h2 id="h2">Through one day</h2>
     <div class="strip" id="strip"></div>
   </section>
 
-  <section aria-labelledby="h-coin">
-    <h2 id="h-coin">The Rumi</h2>
-    <p>A round grey-green stone with a square hole, like an old Chinese coin. Instead of real characters, four short carved marks sit around the hole, so it reads as a coin without pretending to say something.</p>
-    <div class="coins">
-      <div class="coin-card">
-        <h3>A · Smooth</h3>
-        <div class="coin-row" id="coins-smooth"></div>
-      </div>
-      <div class="coin-card">
-        <h3>B · Pixel</h3>
-        <div class="coin-row" id="coins-pixel"></div>
-      </div>
-    </div>
+  <section aria-labelledby="h3">
+    <h2 id="h3">The Rumi</h2>
+    <p>A 16 × 16 grey-green stone coin with a square hole, like an old Chinese coin. Four small carved marks sit around the hole instead of real characters.</p>
+    <div class="coins" id="coins"></div>
   </section>
 
-  <section class="notes" aria-labelledby="h-notes">
-    <h2 id="h-notes">What to tell me</h2>
+  <section aria-labelledby="h4">
+    <h2 id="h4">What to tell me</h2>
     <ul>
-      <li>Smooth gold (A) or pixel gold (B)? Pixel matches the characters more closely; smooth looks grander.</li>
-      <li>Anything about the clock: colours, the hills, the size, more or less ornament.</li>
-      <li>For the coin: keep the abstract marks, or use real characters, such as 通寶 ("circulating treasure", common on old coins)?</li>
+      <li>Is the clock right, or should anything change: colours, size, more or less gold, the hills and house?</li>
+      <li>The coin: keep the four abstract marks, or try real characters such as 通寶 ("circulating treasure", common on old coins)? Real characters would need a bigger coin, around 24 px, to stay readable.</li>
     </ul>
   </section>
 </div>
 
 <script>
+/**
+ * The clock and the Rumi coin, drawn pixel by pixel in the characters' style:
+ * a 1 px dark plum outline, flat two-tone fills, no anti-aliasing.
+ * Pure functions that call `put(x, y, colour)`, so the game and the preview page share them.
+ */
+
+                                                                 
+
+const CLOCK_SIZE = 52;
+const COIN_SIZE = 16;
+
+const P = {
+  out: '#412234',
+  stone: '#6B4A5C',
+  stoneL: '#8A5E6C',
+  stoneD: '#55394A',
+  gold: '#F2C14E',
+  goldD: '#D49A33',
+  goldL: '#FFE08A',
+  sun: '#F8D46B',
+  moon: '#F3EBD6',
+  star: '#FFF6D8',
+  hill: '#94BC7C',
+  hillD: '#76A062',
+  roof: '#E47F78',
+  wall: '#FAE5D0',
+  warm: '#FFD27A',
+  coin: '#93A898',
+  coinL: '#B4C6B8',
+  coinD: '#6F8678',
+};
+
+/** Sky colour through the day, minute of day → colour. Stepped, not blended, like a palette swap. */
+const SKY                     = [
+  [0, '#2A2A5A'],
+  [300, '#4A3F78'],
+  [345, '#E8A9A0'],
+  [390, '#F3C77A'],
+  [450, '#A3C4E8'],
+  [1050, '#F3C77A'],
+  [1110, '#E58A6E'],
+  [1170, '#4A3F78'],
+  [1200, '#2A2A5A'],
+];
+
+function skyColour(minute        )         {
+  const m = ((minute % 1440) + 1440) % 1440;
+  let c = SKY[0] [1];
+  for (const [at, colour] of SKY) if (m >= at) c = colour;
+  return c;
+}
+
+function isNight(minute        )          {
+  const m = ((minute % 1440) + 1440) % 1440;
+  return m >= 1170 || m < 345;
+}
+
+/** Fill a pixel disc of radius r centred on (cx, cy), where centres sit on half pixels. */
+function disc(put     , cx        , cy        , r        , colour        , inside                                    ) {
+  for (let y = Math.floor(cy - r); y <= Math.ceil(cy + r); y++) {
+    for (let x = Math.floor(cx - r); x <= Math.ceil(cx + r); x++) {
+      const dx = x + 0.5 - cx, dy = y + 0.5 - cy;
+      if (dx * dx + dy * dy <= r * r && (!inside || inside(x, y))) put(x, y, colour);
+    }
+  }
+}
+
+/** A ring between radii r0 and r1. */
+function ring(put     , cx        , cy        , r0        , r1        , colour                                  ) {
+  for (let y = Math.floor(cy - r1); y <= Math.ceil(cy + r1); y++) {
+    for (let x = Math.floor(cx - r1); x <= Math.ceil(cx + r1); x++) {
+      const d = Math.hypot(x + 0.5 - cx, y + 0.5 - cy);
+      if (d <= r1 && d > r0) put(x, y, colour(x, y));
+    }
+  }
+}
+
+/** Angle clockwise from straight up: noon = 0, midnight = π. */
+const angleFor = (minute        ) => ((minute - 720) / 1440) * Math.PI * 2;
+
+/**
+ * The day clock, 52 × 52 px. Noon is at the top and midnight at the bottom; the sun and moon ride
+ * opposite each other around the sky and set behind the hills.
+ */
+function drawClock(minute        , put     ) {
+  const c = CLOCK_SIZE / 2; // 26: centre between pixels 25 and 26
+  const sky = skyColour(minute);
+  const night = isNight(minute);
+  const inSky = (x        , y        ) => Math.hypot(x + 0.5 - c, y + 0.5 - c) <= 15.5;
+
+  // Golden crown arcs above the ring: three short arcs, a nod to old engraved dials.
+  ring(put, c, c, 24.4, 25.4, () => P.goldD);
+  for (let y = 0; y < CLOCK_SIZE; y++) {
+    for (let x = 0; x < CLOCK_SIZE; x++) {
+      const d = Math.hypot(x + 0.5 - c, y + 0.5 - c);
+      if (d <= 24.4 || d > 25.4) continue;
+      const deg = (Math.atan2(x + 0.5 - c, -(y + 0.5 - c)) * 180) / Math.PI;
+      const keep = Math.abs(deg) <= 12 || (Math.abs(deg) >= 22 && Math.abs(deg) <= 40);
+      if (!keep) put(x, y, 'transparent');
+    }
+  }
+
+  // Outline, stone ring with a lit upper-left and a shaded lower-right, inner gold band, inner outline.
+  ring(put, c, c, 22.5, 23.6, () => P.out);
+  ring(put, c, c, 18.5, 22.5, (x, y) => {
+    const lit = x + y < CLOCK_SIZE - 6;
+    const shade = x + y > CLOCK_SIZE + 8;
+    return lit ? P.stoneL : shade ? P.stoneD : P.stone;
+  });
+  ring(put, c, c, 17.4, 18.5, (x, y) => (x + y < CLOCK_SIZE ? P.gold : P.goldD));
+  ring(put, c, c, 16.4, 17.4, () => P.out);
+
+  // Hour marks on the stone: gold pips every 2 hours, bigger gems at 6, 12, 18 and 24.
+  for (let h = 0; h < 24; h += 2) {
+    const t = (h / 24) * Math.PI * 2;
+    const x = Math.floor(c + 20.5 * Math.sin(t));
+    const y = Math.floor(c - 20.5 * Math.cos(t));
+    if (h % 6 === 0) {
+      put(x, y, P.goldL);
+      put(x - 1, y, P.gold);
+      put(x + 1, y, P.gold);
+      put(x, y - 1, P.gold);
+      put(x, y + 1, P.goldD);
+    } else {
+      put(x, y, P.gold);
+    }
+  }
+
+  // Sky.
+  disc(put, c, c, 16.4, sky);
+
+  // Stars at night.
+  if (night) {
+    for (const [x, y] of [[18, 16], [23, 13], [31, 15], [35, 21], [27, 19], [15, 23], [37, 26], [21, 22]]         ) put(x, y, P.star);
+  }
+
+  // Sun and moon on opposite ends of the arm, 11 px out.
+  const a = angleFor(minute);
+  const body = (ang        ) => ({ x: c + 11 * Math.sin(ang), y: c - 11 * Math.cos(ang) });
+  const sun = body(a);
+  const moon = body(a + Math.PI);
+  disc(put, sun.x, sun.y, 3.6, P.out, inSky);
+  disc(put, sun.x, sun.y, 2.7, P.sun, inSky);
+  put(Math.floor(sun.x - 1), Math.floor(sun.y - 1), P.goldL);
+  disc(put, moon.x, moon.y, 3.4, P.out, inSky);
+  disc(put, moon.x, moon.y, 2.6, P.moon, inSky);
+  disc(put, moon.x + 1.6, moon.y - 1.2, 2.2, sky, (x, y) => inSky(x, y) && Math.hypot(x + 0.5 - moon.x, y + 0.5 - moon.y) <= 2.6);
+
+  // Hills over the lower sky, then the little house.
+  const hillTop = (x        ) => 31 + Math.round(1.6 * Math.sin((x - 10) / 4.2));
+  const hillTop2 = (x        ) => 35 + Math.round(1.2 * Math.sin((x + 6) / 3.3));
+  for (let x = 8; x < 44; x++) {
+    for (let y = hillTop(x); y < 44; y++) if (inSky(x, y)) put(x, y, P.hillD);
+    if (inSky(x, hillTop(x) - 1)) put(x, hillTop(x) - 1, P.out);
+    for (let y = hillTop2(x); y < 44; y++) if (inSky(x, y)) put(x, y, P.hill);
+  }
+  // House: roof, wall, window (lit at night).
+  const hx = 23, hy = 31;
+  for (let i = 0; i < 4; i++) for (let x = hx + 1 - i; x <= hx + 2 + i; x++) put(x, hy - 4 + i, i === 0 ? P.out : P.roof);
+  for (let y = hy; y < hy + 3; y++) for (let x = hx - 2; x <= hx + 5; x++) put(x, y, P.wall);
+  put(hx - 3, hy - 1, P.out);
+  put(hx + 6, hy - 1, P.out);
+  put(hx + 1, hy + 1, night ? P.warm : P.stoneL);
+  put(hx + 2, hy + 1, night ? P.warm : P.stoneL);
+}
+
+/** The Rumi: a grey-green stone coin with a square hole and four carved marks, 16 × 16 px. */
+function drawCoin(put     ) {
+  const c = COIN_SIZE / 2;
+  disc(put, c, c, 7.6, P.out);
+  disc(put, c, c, 6.6, P.coin);
+  // Lit upper-left rim, shaded lower-right rim.
+  disc(put, c, c, 6.6, P.coinL, (x, y) => x + y <= 9 && Math.hypot(x + 0.5 - c, y + 0.5 - c) > 4.8);
+  disc(put, c, c, 6.6, P.coinD, (x, y) => x + y >= 21 && Math.hypot(x + 0.5 - c, y + 0.5 - c) > 4.8);
+  // Square hole: shaded on its top and left inner edge, lit on its bottom and right, like a carved recess.
+  for (let i = 5; i <= 10; i++) {
+    put(i, 5, P.coinD);
+    put(5, i, P.coinD);
+    put(i, 10, P.coinL);
+    put(10, i, P.coinL);
+  }
+  for (let y = 6; y <= 9; y++) for (let x = 6; x <= 9; x++) put(x, y, 'transparent');
+  // Four carved marks around the hole: top, right, bottom, left.
+  for (const [x, y] of [[7, 3], [8, 3], [12, 7], [12, 8], [7, 12], [8, 12], [3, 7], [3, 8]]         ) {
+    put(x, y, P.coinD);
+  }
+}
+
+/** Draw into a canvas 2D context at 1 px per pixel. */
+function canvasPut(ctx                          )      {
+  return (x, y, colour) => {
+    if (colour === 'transparent') ctx.clearRect(x, y, 1, 1);
+    else {
+      ctx.fillStyle = colour;
+      ctx.fillRect(x, y, 1, 1);
+    }
+  };
+}
+
 (() => {
-  const DAY_START = 360, FAINT_AT = 1560, DUSK_START = 1080, NIGHT_START = 1200;
-  const lightLevel = m => m < DUSK_START ? 0 : m < NIGHT_START ? (m - DUSK_START) / (NIGHT_START - DUSK_START) : 1;
-  const sunAngle = m => ((m - 720) / 1440) * Math.PI * 2;
-  const fmt = m => { const t = ((m % 1440) + 1440) % 1440; return String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0'); };
-
-  // Sky colour keyframes over the 24 h (minute of day).
-  const SKY = [[0,'#1E2148'],[300,'#1E2148'],[345,'#6B5A86'],[375,'#F3C77A'],[450,'#9CC9E8'],[1020,'#9CC9E8'],[1110,'#E58A6E'],[1170,'#5A4775'],[1200,'#1E2148'],[1440,'#1E2148']];
-  const hex = h => [1,3,5].map(i => parseInt(h.slice(i, i + 2), 16));
-  const mix = (a, b, t) => '#' + hex(a).map((v, i) => Math.round(v + (hex(b)[i] - v) * t).toString(16).padStart(2, '0')).join('');
-  function skyAt(m) {
-    const t = ((m % 1440) + 1440) % 1440;
-    for (let i = 0; i < SKY.length - 1; i++) {
-      const [m0, c0] = SKY[i], [m1, c1] = SKY[i + 1];
-      if (t >= m0 && t <= m1) return mix(c0, c1, (t - m0) / (m1 - m0 || 1));
-    }
-    return SKY[0][1];
+  const DUSK = 1080, NIGHT = 1200;
+  const light = m => (m < DUSK ? 0 : m < NIGHT ? (m - DUSK) / (NIGHT - DUSK) : 1);
+  const fmt = m => { const t = Math.floor(m) % 1440; return String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0'); };
+  function paint(canvas, size, scale, draw) {
+    canvas.width = size; canvas.height = size;
+    canvas.style.width = size * scale + 'px'; canvas.style.height = size * scale + 'px';
+    const ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, size, size); draw(canvasPut(ctx));
   }
-
-  const P = (r, a) => [100 + r * Math.sin(a), 100 - r * Math.cos(a)];
-  let uid = 0;
-
-  function clockSvg(m) {
-    const id = 'k' + (uid++);
-    const night = lightLevel(m);
-    const sky = skyAt(m);
-    const skyTop = mix(sky, '#ffffff', 0.18);
-    const a = sunAngle(m);
-    const [sx, sy] = P(50, a), [mx, my] = P(50, a + Math.PI);
-    // Ticks: 24 hours; quarters get ornaments instead.
-    let ticks = '';
-    for (let h = 0; h < 24; h++) {
-      const ang = (h / 24) * Math.PI * 2; // 0 = noon at top
-      if (h % 6 === 0) continue;
-      const long = h % 3 === 0;
-      const [x1, y1] = P(79, ang), [x2, y2] = P(long ? 88 : 84, ang);
-      ticks += `<line x1="${x1.toFixed(2)}" y1="${y1.toFixed(2)}" x2="${x2.toFixed(2)}" y2="${y2.toFixed(2)}" stroke="#D9B45A" stroke-width="${long ? 2 : 1.2}" stroke-linecap="round"/>`;
-      const [dx, dy] = P(83, ang + Math.PI / 24);
-      ticks += `<circle cx="${dx.toFixed(2)}" cy="${dy.toFixed(2)}" r="0.9" fill="#8C7440"/>`;
-    }
-    // Quarter ornaments: sun glyph at noon (top), crescent at midnight (bottom), diamonds at 06 (left) and 18 (right).
-    const orn = `
-      <g fill="#E8C66A" stroke="#7A5E26" stroke-width="0.8">
-        <circle cx="100" cy="16.5" r="4.2"/>
-        ${[0,1,2,3,4,5,6,7].map(i => { const t = i * Math.PI / 4; return `<line x1="${(100 + 5.8 * Math.sin(t)).toFixed(2)}" y1="${(16.5 - 5.8 * Math.cos(t)).toFixed(2)}" x2="${(100 + 8 * Math.sin(t)).toFixed(2)}" y2="${(16.5 - 8 * Math.cos(t)).toFixed(2)}" stroke="#E8C66A" stroke-width="1.4" stroke-linecap="round"/>`; }).join('')}
-        <path d="M104 178.5a6 6 0 1 1-6.5-7.6a4.6 4.6 0 0 0 6.5 7.6z"/>
-        <path d="M16 100l4.5-5l4.5 5l-4.5 5z"/>
-        <path d="M175 100l4.5-5l4.5 5l-4.5 5z"/>
-      </g>`;
-    // Stars fade in at night.
-    const stars = [[62,58],[80,40],[118,46],[138,62],[96,30],[70,78],[132,84],[108,66],[56,90],[146,96]]
-      .map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="${i % 3 ? 0.9 : 1.4}" fill="#FFF6D8"/>`).join('');
-    const rays = [0,1,2,3,4,5,6,7].map(i => { const t = i * Math.PI / 4; return `<line x1="${(sx + 11 * Math.sin(t)).toFixed(2)}" y1="${(sy - 11 * Math.cos(t)).toFixed(2)}" x2="${(sx + 15 * Math.sin(t)).toFixed(2)}" y2="${(sy - 15 * Math.cos(t)).toFixed(2)}" stroke="#F8D46B" stroke-width="2.2" stroke-linecap="round"/>`; }).join('');
-    const windowLit = night > 0.4 ? '#FFD27A' : '#3B3040';
-    return `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Clock showing ${fmt(m)}">
-  <defs>
-    <radialGradient id="${id}s" cx="50%" cy="35%" r="70%"><stop offset="0" stop-color="${skyTop}"/><stop offset="1" stop-color="${sky}"/></radialGradient>
-    <radialGradient id="${id}r" cx="50%" cy="40%" r="60%"><stop offset="0.7" stop-color="#3D3346"/><stop offset="1" stop-color="#251E2C"/></radialGradient>
-    <clipPath id="${id}c"><circle cx="100" cy="100" r="69"/></clipPath>
-    <filter id="${id}g" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2.4"/></filter>
-  </defs>
-  <circle cx="100" cy="100" r="98" fill="none" stroke="#E8C66A" stroke-opacity="0.45" stroke-width="3" filter="url(#${id}g)"/>
-  <g clip-path="url(#${id}c)">
-    <rect x="0" y="0" width="200" height="200" fill="url(#${id}s)"/>
-    <g opacity="${night.toFixed(2)}">${stars}</g>
-    <line x1="${sx.toFixed(2)}" y1="${sy.toFixed(2)}" x2="${mx.toFixed(2)}" y2="${my.toFixed(2)}" stroke="#D9B45A" stroke-opacity="0.55" stroke-width="1.2"/>
-    <g>${rays}<circle cx="${sx.toFixed(2)}" cy="${sy.toFixed(2)}" r="9.5" fill="#F8D46B" stroke="#C8962E" stroke-width="1.2"/></g>
-    <g><circle cx="${mx.toFixed(2)}" cy="${my.toFixed(2)}" r="8.5" fill="#EDE7D3"/><circle cx="${(mx + 4).toFixed(2)}" cy="${(my - 3).toFixed(2)}" r="7.5" fill="${sky}"/></g>
-    <circle cx="100" cy="100" r="3.2" fill="#D9B45A" stroke="#7A5E26" stroke-width="0.8"/>
-    <path d="M20 128 C45 112 70 118 92 124 C112 129 140 108 180 120 L180 200 L20 200 Z" fill="${mix('#4F6E52', '#1F2A3A', night * 0.6)}"/>
-    <path d="M20 142 C50 130 82 136 104 140 C130 145 155 132 180 138 L180 200 L20 200 Z" fill="${mix('#6E9160', '#28374A', night * 0.6)}"/>
-    <g transform="translate(118 122)"><path d="M0 9 L9 1 L18 9 Z" fill="${mix('#B8574F', '#4A2E3E', night * 0.6)}"/><rect x="2.5" y="9" width="13" height="9" fill="${mix('#F0DCC0', '#4D4552', night * 0.6)}"/><rect x="6.5" y="11.5" width="4" height="3.5" fill="${windowLit}"/></g>
-  </g>
-  <circle cx="100" cy="100" r="83" fill="none" stroke="url(#${id}r)" stroke-width="26"/>
-  <circle cx="100" cy="100" r="95" fill="none" stroke="#D9B45A" stroke-width="1.6"/>
-  <circle cx="100" cy="100" r="70.5" fill="none" stroke="#D9B45A" stroke-width="1.6"/>
-  <circle cx="100" cy="100" r="75" fill="none" stroke="#8C7440" stroke-width="0.7"/>
-  <circle cx="100" cy="100" r="91" fill="none" stroke="#8C7440" stroke-width="0.7" stroke-dasharray="1.5 3"/>
-  ${ticks}
-  ${orn}
-</svg>`;
-  }
-
-  function coinSvg() {
-    const glyphs = `
-      <g stroke="#4E6155" stroke-width="2.6" stroke-linecap="round" fill="none">
-        <path d="M27 11.5h10M32 9v6"/>
-        <path d="M50 27v10M47.5 29.5h5M47.5 34.5h5"/>
-        <path d="M27 52.5h10M29 49.5l6 6"/>
-        <path d="M14 27v10M11.5 32h5"/>
-      </g>`;
-    return `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Rumi coin">
-  <defs>
-    <radialGradient id="cg" cx="38%" cy="32%" r="75%"><stop offset="0" stop-color="#B4C6B8"/><stop offset="0.55" stop-color="#8FA597"/><stop offset="1" stop-color="#6F8678"/></radialGradient>
-    <mask id="cm"><rect width="64" height="64" fill="#fff"/><rect x="25" y="25" width="14" height="14" fill="#000"/></mask>
-  </defs>
-  <g mask="url(#cm)">
-    <circle cx="32" cy="33" r="29" fill="#3F4F45"/>
-    <circle cx="32" cy="32" r="29" fill="url(#cg)" stroke="#55695C" stroke-width="2.5"/>
-    <circle cx="32" cy="32" r="24.5" fill="none" stroke="#6B8172" stroke-width="1.3"/>
-    <rect x="22.5" y="22.5" width="19" height="19" fill="none" stroke="#6B8172" stroke-width="1.3"/>
-    ${glyphs}
-    <path d="M12 24 A22 22 0 0 1 26 10" stroke="#fff" stroke-opacity="0.4" stroke-width="2.4" fill="none" stroke-linecap="round"/>
-    <path d="M51 46l3 1.5" stroke="#55695C" stroke-width="1.6" stroke-linecap="round"/>
-  </g>
-  <rect x="25" y="25" width="14" height="14" fill="none" stroke="#3F4F45" stroke-width="1.5"/>
-</svg>`;
-  }
-
-  // Draw an SVG into a small canvas and blow it up with nearest-neighbour, for the pixel finish.
-  function pixelate(svg, canvas, low, out) {
-    const img = new Image();
-    img.onload = () => {
-      const tmp = document.createElement('canvas'); tmp.width = low; tmp.height = low;
-      const t = tmp.getContext('2d'); t.drawImage(img, 0, 0, low, low);
-      // Snap alpha so edges stay crisp.
-      const d = t.getImageData(0, 0, low, low); for (let i = 3; i < d.data.length; i += 4) d.data[i] = d.data[i] > 110 ? 255 : 0; t.putImageData(d, 0, 0);
-      canvas.width = out; canvas.height = out;
-      const c = canvas.getContext('2d'); c.imageSmoothingEnabled = false; c.clearRect(0, 0, out, out); c.drawImage(tmp, 0, 0, out, out);
-    };
-    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
-  }
-
-  const smooth = document.getElementById('c-smooth'), pixel = document.getElementById('c-pixel');
-  smooth.innerHTML = '<div class="svgbox"></div><div class="plaque"></div>';
-  pixel.innerHTML = '<canvas width="200" height="200" aria-label="Pixel clock"></canvas><div class="plaque"></div>';
-  const tints = [...document.querySelectorAll('.hero .tint')];
+  // The game's own grass tile as the meadow background.
+  (function grass() {
+    const c = document.createElement('canvas'); c.width = 16; c.height = 16; const x = c.getContext('2d');
+    x.fillStyle = '#B9D193'; x.fillRect(0, 0, 16, 16); x.fillStyle = '#9FBC7F';
+    for (const [a, b] of [[4, 3], [11, 8], [6, 12], [13, 13]]) { x.fillRect(a, b, 1, 1); x.fillRect(a - 1, b + 1, 1, 1); x.fillRect(a + 1, b + 1, 1, 1); }
+    x.fillStyle = '#D2E4AE'; x.fillRect(2, 9, 1, 1); x.fillRect(9, 2, 1, 1);
+    const url = 'url(' + c.toDataURL() + ')';
+    document.querySelectorAll('.meadow').forEach(m => (m.style.backgroundImage = url));
+  })();
+  const game = document.getElementById('c-game'), big = document.getElementById('c-big');
   const slider = document.getElementById('time'), readout = document.getElementById('readout');
-
+  const tint = document.getElementById('tint'), plaque = document.getElementById('plaque');
   function render(m) {
-    const svg = clockSvg(m);
-    smooth.querySelector('.svgbox').innerHTML = svg;
-    pixelate(svg, pixel.querySelector('canvas'), 72, 200);
-    const label = 'Day 3 · ' + fmt(m);
-    smooth.querySelector('.plaque').textContent = label;
-    pixel.querySelector('.plaque').textContent = label;
+    paint(game, CLOCK_SIZE, 3, put => drawClock(m, put));
+    paint(big, CLOCK_SIZE, 6, put => drawClock(m, put));
+    plaque.textContent = 'Day 3 · ' + fmt(m);
     readout.textContent = fmt(m);
-    tints.forEach(t => t.style.opacity = (lightLevel(m) * 0.55).toFixed(2));
+    tint.style.opacity = (light(m) * 0.55).toFixed(2);
   }
   slider.addEventListener('input', () => render(+slider.value));
-
-  let playing = null;
-  const playBtn = document.getElementById('play');
-  playBtn.addEventListener('click', () => {
-    if (playing) { cancelAnimationFrame(playing); playing = null; playBtn.textContent = 'Play a day'; return; }
-    playBtn.textContent = 'Pause';
-    let last = performance.now(), m = +slider.value >= FAINT_AT ? DAY_START : +slider.value;
-    const step = now => {
-      m += (now - last) / 1000 * (1200 / 24); last = now; // 06:00 → 02:00 in 24 s
-      if (m >= FAINT_AT) m = DAY_START;
-      slider.value = Math.round(m); render(Math.round(m));
-      playing = requestAnimationFrame(step);
-    };
-    playing = requestAnimationFrame(step);
+  let raf = null; const btn = document.getElementById('play');
+  btn.addEventListener('click', () => {
+    if (raf) { cancelAnimationFrame(raf); raf = null; btn.textContent = 'Play a day'; return; }
+    btn.textContent = 'Pause';
+    let last = performance.now(), m = +slider.value >= 1560 ? 360 : +slider.value;
+    const step = now => { m += ((now - last) / 1000) * (1200 / 24); last = now; if (m >= 1560) m = 360; slider.value = Math.round(m); render(m); raf = requestAnimationFrame(step); };
+    raf = requestAnimationFrame(step);
   });
-
   const strip = document.getElementById('strip');
-  [360, 720, 1110, 1260, 1530].forEach(m => {
+  for (const m of [360, 720, 1110, 1260, 1530]) {
     const cell = document.createElement('div'); cell.className = 'meadow';
-    cell.innerHTML = `<div class="tint" style="opacity:${(lightLevel(m) * 0.55).toFixed(2)}"></div><div class="clock">${clockSvg(m)}<div class="plaque">Day 3 · ${fmt(m)}</div></div>`;
-    strip.appendChild(cell);
-  });
-
-  const coin = coinSvg();
-  const cs = document.getElementById('coins-smooth'), cp = document.getElementById('coins-pixel');
-  [[64, 'Shop size'], [32, 'Bag size'], [20, 'HUD size']].forEach(([s, cap]) => {
-    cs.insertAdjacentHTML('beforeend', `<figure><div style="width:${s}px;height:${s}px">${coin.replace('<svg ', `<svg width="${s}" height="${s}" `)}</div><figcaption>${cap}</figcaption></figure>`);
-    const f = document.createElement('figure'); const cv = document.createElement('canvas'); cv.style.width = s + 'px'; cv.style.height = s + 'px';
-    f.appendChild(cv); f.insertAdjacentHTML('beforeend', `<figcaption>${cap}</figcaption>`); cp.appendChild(f);
-    pixelate(coin, cv, 20, s * 2);
-  });
-  const purse = s => `<span class="purse">${s}<span>1,250 Rumis</span></span>`;
-  cs.insertAdjacentHTML('beforeend', `<figure>${purse(`<span style="width:22px;height:22px;display:inline-block">${coin.replace('<svg ', '<svg width="22" height="22" ')}</span>`)}<figcaption>Purse in the HUD</figcaption></figure>`);
-  const pf = document.createElement('figure'); pf.innerHTML = purse('<canvas style="width:22px;height:22px"></canvas>') + '<figcaption>Purse in the HUD</figcaption>'; cp.appendChild(pf);
-  pixelate(coin, pf.querySelector("canvas"), 20, 44);
-
+    cell.innerHTML = '<div class="tint" style="opacity:' + (light(m) * 0.55).toFixed(2) + '"></div><div class="clock"><canvas></canvas><div class="plaque">Day 3 · ' + fmt(m) + '</div></div>';
+    strip.append(cell); paint(cell.querySelector('canvas'), CLOCK_SIZE, 2, put => drawClock(m, put));
+  }
+  const coins = document.getElementById('coins');
+  for (const [s, cap] of [[6, 'Close up, 6×'], [4, 'Shop, 4×'], [3, 'Bag, 3×'], [2, 'HUD, 2×']]) {
+    const f = document.createElement('figure'); const cv = document.createElement('canvas'); f.append(cv);
+    f.insertAdjacentHTML('beforeend', '<figcaption>' + cap + '</figcaption>'); coins.append(f); paint(cv, COIN_SIZE, s, drawCoin);
+  }
+  const pf = document.createElement('figure'); pf.innerHTML = '<span class="purse"><canvas></canvas><span>1,250 Rumis</span></span><figcaption>Purse in the HUD</figcaption>';
+  coins.append(pf); paint(pf.querySelector('canvas'), COIN_SIZE, 2, drawCoin);
   render(+slider.value);
 })();
 </script>

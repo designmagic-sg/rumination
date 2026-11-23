@@ -1,0 +1,42 @@
+import type { ZoneMap } from './types';
+
+/** The path to the market stall, with the fenced track north to the Woods (locked until step 4). */
+export const MARKET: ZoneMap = {
+  id: 'market',
+  name: 'Market Path',
+  rows: [
+    'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+    'b,........==.................b',
+    'b.........==.........,.......b',
+    'b.....,..####...........b....b',
+    'b...bb,...==.................b',
+    'b....,....==.................b',
+    'b.....,...==..,..............b',
+    'b,....,,..==.................b',
+    'b...,.....==.............,..,b',
+    '======================.......b',
+    '======================.......b',
+    'b..,......,..................b',
+    'b,......................,....b',
+    'b.....,.......b..............b',
+    'b.................bb.........b',
+    'b,...,bb.................b...b',
+    'b...........,................b',
+    'b.........................,..b',
+    'b......,.....,...............b',
+    'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+  ],
+  objects: [
+    { kind: 'stall', x: 22, y: 7 },
+    { kind: 'lamp', x: 6, y: 7 },
+    { kind: 'lamp', x: 16, y: 7 },
+    { kind: 'sign', x: 12, y: 4 },
+    { kind: 'tree', x: 2, y: 1 },
+    { kind: 'tree', x: 26, y: 4 },
+    { kind: 'tree', x: 24, y: 11 },
+    { kind: 'tree', x: 4, y: 16 },
+    { kind: 'rock', x: 17, y: 16 },
+  ],
+  exits: [{ x: 0, y: 9, w: 1, h: 2, to: 'farm', spawn: { x: 37, y: 14 } }],
+  spawn: { x: 3, y: 10 },
+};

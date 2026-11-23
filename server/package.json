@@ -10,10 +10,12 @@
   "dependencies": {
     "@colyseus/schema": "5.0.50",
     "@ruminate/shared": "*",
-    "colyseus": "0.18.12"
+    "colyseus": "0.18.12",
+    "express": "5.3.0"
   },
   "devDependencies": {
     "@colyseus/sdk": "0.18.10",
+    "@types/express": "5.0.6",
     "@types/node": "22.19.1"
   }
 }

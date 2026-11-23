@@ -1,0 +1,19 @@
+{
+  "name": "@ruminate/server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json",
+    "start": "tsx src/main.ts"
+  },
+  "dependencies": {
+    "@colyseus/schema": "5.0.50",
+    "@ruminate/shared": "*",
+    "colyseus": "0.18.12"
+  },
+  "devDependencies": {
+    "@colyseus/sdk": "0.18.10",
+    "@types/node": "22.19.1"
+  }
+}

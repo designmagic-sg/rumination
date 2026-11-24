@@ -1,5 +1,6 @@
 import {
   FACINGS,
+  MAX_PLAYERS,
   TILE,
   ZONES,
   advanceClock,
@@ -8,7 +9,9 @@ import {
   isEmote,
   isSpecies,
   isZoneId,
-  moveIsPlausible,
+  MOVE_ALLOWANCE,
+  MOVE_BURST,
+  pathIsClear,
   startNextDay,
   type Facing,
   type Species,
@@ -17,7 +20,9 @@ import {
 } from '@ruminate/shared';
 import { PlayerState, type WorldState } from './schema';
 
-export type JoinResult = { ok: true; replaced?: string } | { ok: false; error: 'BANNED' | 'BAD_NAME' | 'BAD_SPECIES' };
+export type JoinResult =
+  | { ok: true; replaced?: string }
+  | { ok: false; error: 'BANNED' | 'BAD_NAME' | 'BAD_SPECIES' | 'WORLD_FULL' };
 export type MoveResult = { ok: true } | { ok: false; snapTo: { zone: ZoneId; x: number; y: number } };
 export type TickEvent = 'new-day' | 'fainted';
 
@@ -28,6 +33,8 @@ const tileCentre = (t: { x: number; y: number }) => ({ x: t.x * TILE + 8, y: t.y
 interface Session {
   key: string;
   lastMoveAt: number;
+  /** Pixels this player may still walk: refills at MOVE_ALLOWANCE per second, up to MOVE_BURST. */
+  budget: number;
 }
 
 /**
@@ -61,6 +68,8 @@ export class WorldSim {
     const name = cleanNickname(String(nickname ?? ''));
     if (!name) return { ok: false, error: 'BAD_NAME' };
     if (!isSpecies(species)) return { ok: false, error: 'BAD_SPECIES' };
+    const alreadyIn = [...this.sessions.values()].some(s => s.key === playerKey);
+    if (!alreadyIn && this.sessions.size >= MAX_PLAYERS) return { ok: false, error: 'WORLD_FULL' };
 
     let replaced: string | undefined;
     for (const [sid, s] of this.sessions) {
@@ -81,7 +90,7 @@ export class WorldSim {
     p.facing = start.facing;
     p.isOwner = playerKey === this.save.ownerKey;
     this.state.players.set(sessionId, p);
-    this.sessions.set(sessionId, { key: playerKey, lastMoveAt: this.now() });
+    this.sessions.set(sessionId, { key: playerKey, lastMoveAt: this.now(), budget: MOVE_BURST });
     this.save.emptySince = null;
     return replaced ? { ok: true, replaced } : { ok: true };
   }
@@ -118,7 +127,12 @@ export class WorldSim {
 
     const now = this.now();
     const here = ZONES[p.zone as ZoneId];
-    if (!moveIsPlausible({ x: p.x, y: p.y }, { x, y }, now - s.lastMoveAt, here)) return snap;
+    // Distance budget: refill for the time since the last accepted move, capped at a short burst.
+    // A flood of tiny moves, or a long idle followed by a teleport, both run out of budget.
+    const budget = Math.min(MOVE_BURST, s.budget + (MOVE_ALLOWANCE * Math.max(0, now - s.lastMoveAt)) / 1000);
+    const cost = Math.hypot(x - p.x, y - p.y);
+    if (cost > budget + 0.5) return snap;
+    if (!pathIsClear({ x: p.x, y: p.y }, { x, y }, here)) return snap;
 
     let dest = { zone: p.zone as ZoneId, x, y };
     if (zone !== p.zone) {
@@ -137,6 +151,7 @@ export class WorldSim {
       p.emote = '';
       p.inBed = false;
     }
+    s.budget = Math.max(0, budget - cost);
     s.lastMoveAt = now;
     return { ok: true };
   }

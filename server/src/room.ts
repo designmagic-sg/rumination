@@ -25,7 +25,10 @@ export interface RoomDeps {
 }
 
 export class WorldRoom extends Room<{ state: WorldState }> {
-  maxClients = MAX_PLAYERS;
+  /** One spare seat so someone already in can rejoin (a refreshed tab) and replace themselves; WorldSim enforces 8 people. */
+  maxClients = MAX_PLAYERS + 1;
+  /** An honest client sends about 15 moves a second; anything far past that is a flood. */
+  maxMessagesPerSecond = 40;
   /** Set by createGameServer on a per-server subclass. */
   deps!: RoomDeps;
   private sim!: WorldSim;

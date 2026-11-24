@@ -27,7 +27,7 @@ const rooms: Room[] = [];
 
 beforeAll(async () => {
   const port = await freePort();
-  server = await createGameServer({ port, dbPath: ':memory:', timeScale: 60 });
+  server = await createGameServer({ port, dbPath: ':memory:', timeScale: 60, limits: { lookupsPerMinute: 80, createsPerMinute: 40 } });
   base = `http://localhost:${port}`;
 });
 
@@ -106,7 +106,11 @@ describe('world room', () => {
     const eight: Room[] = [];
     for (let i = 0; i < MAX_PLAYERS; i++) eight.push(await join(code, 100 + i));
     await expect(join(code, 200)).rejects.toThrow(/WORLD_FULL/);
-    for (const r of eight) await r.leave();
+    // Someone already in (say, refreshing their tab) replaces their old character instead.
+    const again = await join(code, 100);
+    await waitFor(() => again.state.players?.size === 8);
+    for (const r of eight.slice(1)) await r.leave();
+    await again.leave();
   });
 
   it('world saves and pauses when the last player disconnects', async () => {
@@ -117,7 +121,8 @@ describe('world room', () => {
     await a.leave(false); // drop without saying goodbye
     await waitFor(() => server.store.load(code)!.emptySince !== null, 2000);
     const saved = server.store.load(code)!;
-    expect(saved.clock.minute).toBeGreaterThanOrEqual(minute);
+    // Synced numbers travel as float32, so compare whole minutes.
+    expect(Math.floor(saved.clock.minute)).toBeGreaterThanOrEqual(Math.floor(minute));
     expect(saved.players[KEY(6)]).toBeDefined();
     await new Promise(r => setTimeout(r, 300));
     expect(server.store.load(code)!.clock.minute).toBe(saved.clock.minute); // paused
@@ -125,6 +130,15 @@ describe('world room', () => {
     await waitFor(() => again.state.minute !== undefined);
     expect(Math.floor(again.state.minute)).toBe(Math.floor(saved.clock.minute));
     await again.leave();
+  });
+
+  it('disconnects a client that floods the room with messages', async () => {
+    const code = await createWorld();
+    const a = await join(code, 8);
+    let left = false;
+    a.onLeave(() => (left = true));
+    for (let i = 0; i < 300; i++) a.send('emote', 'jump');
+    await waitFor(() => left, 3000);
   });
 
   it('owner can remove a player, who is then banned', async () => {
@@ -138,5 +152,21 @@ describe('world room', () => {
     await waitFor(() => kicked);
     await expect(join(code, 7)).rejects.toThrow(/BANNED/);
     await owner.leave();
+  });
+});
+
+// Runs last: it uses up this address's lookup allowance for the minute.
+describe('rate limits', () => {
+  it('stops one address from scanning for world codes', async () => {
+    let refused = 0;
+    for (let i = 0; i < 100; i++) {
+      const res = await fetch(`${base}/api/worlds/MOON-${2222 + (i % 7)}`);
+      if (res.status === 429) refused++;
+    }
+    expect(refused).toBeGreaterThan(0);
+  });
+
+  it('also stops join attempts once the allowance is used up', async () => {
+    await expect(join('LEAF-2345', 300)).rejects.toThrow(/RATE_LIMITED|429|Too many/);
   });
 });

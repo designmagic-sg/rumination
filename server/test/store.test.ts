@@ -32,3 +32,11 @@ describe('WorldStore', () => {
     expect(store.updatedAt(w.code)!).toBeGreaterThan(before);
   });
 });
+
+describe('WorldStore code space', () => {
+  it('gives up with NO_FREE_CODES instead of looping forever when codes run out', () => {
+    const store = openStore(':memory:', () => 'MOON-2222');
+    store.createWorld('First', KEY);
+    expect(() => store.createWorld('Second', KEY)).toThrow('NO_FREE_CODES');
+  });
+});

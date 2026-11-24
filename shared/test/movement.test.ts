@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { TILE, type ZoneMap } from '../src/maps';
-import { MAX_STEP_MS, WALK_SPEED, facingFor, moveIsPlausible, stepPlayer } from '../src/movement';
+import { MAX_STEP_MS, WALK_SPEED, facingFor, moveIsPlausible, pathIsClear, stepPlayer } from '../src/movement';
 
 // 12 × 8 test field: fence row at y=1, fence column at x=8, water at (3,6).
 const field: ZoneMap = {
@@ -81,5 +81,17 @@ describe('moveIsPlausible', () => {
   });
   it('rejects NaN', () => {
     expect(moveIsPlausible(start, { x: NaN, y: start.y }, 66, field)).toBe(false);
+  });
+});
+
+describe('pathIsClear', () => {
+  it('allows a straight walk across open grass', () => {
+    expect(pathIsClear({ x: 24, y: 72 }, { x: 104, y: 72 }, field)).toBe(true);
+  });
+  it('refuses a path that crosses the fence column, even when both ends are open', () => {
+    expect(pathIsClear({ x: 7 * TILE + 4, y: 4 * TILE + 8 }, { x: 9 * TILE + 8, y: 4 * TILE + 8 }, field)).toBe(false);
+  });
+  it('refuses an end point in the water', () => {
+    expect(pathIsClear({ x: 3 * TILE + 8, y: 5 * TILE + 8 }, { x: 3 * TILE + 8, y: 6 * TILE + 8 }, field)).toBe(false);
   });
 });

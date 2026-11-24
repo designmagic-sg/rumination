@@ -10,7 +10,10 @@ export interface WorldStore {
   close(): void;
 }
 
-export function openStore(path: string): WorldStore {
+/** How many codes to try before giving up, so a full code space can't hang the server. */
+const MAX_CODE_TRIES = 100;
+
+export function openStore(path: string, makeCode: () => string = generateCode): WorldStore {
   const db = new DatabaseSync(path);
   db.exec(`CREATE TABLE IF NOT EXISTS worlds (
     code TEXT PRIMARY KEY,
@@ -27,13 +30,14 @@ export function openStore(path: string): WorldStore {
 
   const store: WorldStore = {
     createWorld(name, ownerKey) {
-      for (;;) {
-        const code = generateCode();
+      for (let i = 0; i < MAX_CODE_TRIES; i++) {
+        const code = makeCode();
         if (store.exists(code)) continue;
         const world = newWorldSave(code, name, ownerKey);
         insert.run(code, name, JSON.stringify(world), stamp());
         return world;
       }
+      throw new Error('NO_FREE_CODES');
     },
     load(code) {
       const row = select.get(code) as { data: string } | undefined;

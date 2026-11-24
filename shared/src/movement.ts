@@ -58,10 +58,27 @@ export function facingFor(input: Input, previous: Facing): Facing {
   return previous;
 }
 
-/** Server check: could an honest client have walked from `from` to `to` in this time? */
+/** Server checks for movement. An honest client walks at WALK_SPEED; allow 25% slack for timing. */
+export const MOVE_ALLOWANCE = WALK_SPEED * 1.25;
+/** The most distance a player can bank by standing still: a quarter-second burst. */
+export const MOVE_BURST = MOVE_ALLOWANCE * 0.25;
+
+/** Is every point along the straight line from `from` to `to` walkable? Sampled every 4 px or less. */
+export function pathIsClear(from: Pos, to: Pos, zone: ZoneMap): boolean {
+  if (![to.x, to.y, from.x, from.y].every(Number.isFinite)) return false;
+  const dist = Math.hypot(to.x - from.x, to.y - from.y);
+  const steps = Math.max(1, Math.ceil(dist / 4));
+  for (let i = 1; i <= steps; i++) {
+    const t = i / steps;
+    if (blocked(zone, from.x + (to.x - from.x) * t, from.y + (to.y - from.y) * t)) return false;
+  }
+  return true;
+}
+
+/** Could an honest client have walked from `from` to `to` in this time, without passing through walls? */
 export function moveIsPlausible(from: Pos, to: Pos, elapsedMs: number, zone: ZoneMap): boolean {
   if (![to.x, to.y, from.x, from.y, elapsedMs].every(Number.isFinite)) return false;
   const limit = (WALK_SPEED * Math.max(elapsedMs, 50)) / 1000 * 1.5 + 2;
   if (Math.hypot(to.x - from.x, to.y - from.y) > limit) return false;
-  return !blocked(zone, to.x, to.y);
+  return pathIsClear(from, to, zone);
 }

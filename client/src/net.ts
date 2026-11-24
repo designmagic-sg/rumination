@@ -40,6 +40,7 @@ const MESSAGES: Record<string, string> = {
   BANNED: 'You can’t join this world.',
   BAD_NAME: 'Pick a nickname first.',
   BAD_CODE: 'Codes look like MOON-4823.',
+  RATE_LIMITED: 'Too many tries. Wait a minute and try again.',
 };
 
 function friendly(err: unknown): FriendlyError {
@@ -71,6 +72,7 @@ export async function joinWorld(input: string, nickname: string, species: Specie
   try {
     const res = await fetch(`${serverUrl()}/api/worlds/${encodeURIComponent(code)}`);
     if (res.status === 404) throw new FriendlyError(MESSAGES.WORLD_NOT_FOUND);
+    if (res.status === 429) throw new FriendlyError(MESSAGES.RATE_LIMITED!);
     return await new Client(serverUrl()).joinOrCreate('world', { code, playerKey: playerKey(), nickname, species });
   } catch (e) {
     throw friendly(e);

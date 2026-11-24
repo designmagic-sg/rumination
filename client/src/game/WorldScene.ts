@@ -17,6 +17,8 @@ import {
   type ZoneMap,
 } from '@ruminate/shared';
 import type { Hud } from '../hud/hud';
+import { mountClock } from '../hud/clock';
+import { mountNight } from './night';
 import { PlayerView, type PlayerLook } from './players';
 import { TILE_FRAMES, frameFor } from './tiles';
 
@@ -70,8 +72,10 @@ export class WorldScene extends Phaser.Scene {
   private sinceList = 0;
   private wasInBed = false;
   private nameShown = false;
-  /** Lets night.ts (Task 9) swap textures without knowing about zones. */
+  /** The current zone's props, so night.ts can light windows and lamps. */
   readonly props: Phaser.GameObjects.Image[] = [];
+  private night!: ReturnType<typeof mountNight>;
+  private clockView!: ReturnType<typeof mountClock>;
 
   constructor() {
     super('world');
@@ -91,6 +95,9 @@ export class WorldScene extends Phaser.Scene {
 
   create() {
     this.cameras.main.setZoom(ZOOM).setRoundPixels(true).setBackgroundColor('#76A062');
+    this.night = mountNight(this, this.props);
+    this.clockView = mountClock(this.hud.clockSlot);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.clockView.destroy());
     const kb = this.input.keyboard!;
     this.keys = kb.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,E,Z,X,C,P,SPACE') as Record<string, Phaser.Input.Keyboard.Key>;
 
@@ -102,7 +109,7 @@ export class WorldScene extends Phaser.Scene {
     this.room.onMessage('event', (e: { kind: string; day: number }) => {
       if (e.kind === 'new-day') this.hud.toasts.show(`Good morning! Day ${e.day}`);
       if (e.kind === 'fainted') this.hud.toasts.show(`You fainted from tiredness… Day ${e.day}`);
-      this.events.emit('morning');
+      this.night.morning();
     });
     this.room.onMessage('toast', (t: string) => this.hud.toasts.show(String(t)));
 
@@ -147,7 +154,7 @@ export class WorldScene extends Phaser.Scene {
       this.props.push(img);
       this.zoneObjects.push(img);
     }
-    this.events.emit('zone-built');
+    this.night.rebuild(zone.rows[0]!.length * TILE, zone.rows.length * TILE);
   }
 
   private readInput(): Input {
@@ -289,7 +296,8 @@ export class WorldScene extends Phaser.Scene {
 
     // HUD.
     this.hud.setTime(formatClock({ day: state.day, minute: state.minute }));
-    this.events.emit('clock', state.minute, state.day);
+    this.clockView.set({ day: state.day, minute: state.minute });
+    this.night.set(state.minute);
     this.sinceList += delta;
     if (this.sinceList > 250 && this.hud.playersOpen) {
       this.sinceList = 0;

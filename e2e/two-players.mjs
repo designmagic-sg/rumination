@@ -69,7 +69,7 @@ try {
   await A.waitForSelector('#new-code');
   const code = (await A.textContent('#new-code')).trim();
   await A.click('#enter-world');
-  await A.waitForSelector('canvas');
+  await A.waitForSelector('.game-root > canvas');
 
   await B.goto('http://localhost:5173/');
   await B.click('#tab-join');
@@ -77,11 +77,11 @@ try {
   await B.fill('#nickname', 'Bo');
   await B.click('[data-species="chime"]');
   await B.click('button.go');
-  await B.waitForSelector('canvas');
+  await B.waitForSelector('.game-root > canvas');
 
   await A.waitForTimeout(1200);
   const before = await A.evaluate(() => window.__ruminate.me());
-  await A.click('canvas');
+  await A.click('.game-root > canvas');
   await A.keyboard.down('d');
   await A.waitForTimeout(1000);
   await A.keyboard.up('d');

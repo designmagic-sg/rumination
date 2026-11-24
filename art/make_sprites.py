@@ -187,9 +187,9 @@ def fit_grid(profile, sizes):
     return best[1], best[2]
 
 
-def grid_size(cells):
-    """One art-pixel size per sheet, fitted on all of its poses together."""
-    sizes = np.arange(9.0, 13.01, 0.05)
+def grid_size(cells, lo=9.0, hi=13.0):
+    """One art-pixel size per sheet, fitted on all of its poses together, searched between lo and hi px."""
+    sizes = np.arange(lo, hi + 0.01, 0.05)
     scores = np.zeros(len(sizes))
     for idx in cells:
         for axis in (0, 1):

@@ -132,6 +132,32 @@ describe('world room', () => {
     await again.leave();
   });
 
+  it('sends each player their bag, and shows farming to everyone', async () => {
+    const code = await createWorld();
+    const a = await join(code, 9);
+    const b = await join(code, 10, 'chime');
+    let inv: { bag: ({ item: string; count: number } | null)[]; rumis: number } | null = null;
+    a.onMessage('inventory', m => (inv = m));
+    a.send('ready');
+    await waitFor(() => inv !== null && b.state.players?.size === 2);
+    expect(inv!.rumis).toBe(50);
+    // Walk A from the spawn (18,8) to just above the plot tile (18,11), one legal step at a time.
+    const p = a.state.players.get(a.sessionId)!;
+    let y = p.y;
+    while (y < 10 * TILE + 8) {
+      await new Promise(r => setTimeout(r, 70));
+      y = Math.min(y + 4, 10 * TILE + 8);
+      a.send('move', { x: p.x, y, zone: 'farm', facing: 'down', moving: true });
+    }
+    await waitFor(() => a.state.players.get(a.sessionId)!.y === 10 * TILE + 8);
+    a.send('use', { x: 18, y: 11, slot: 0 });
+    a.send('use', { x: 18, y: 11, slot: 2 });
+    await waitFor(() => b.state.soil?.get('18,11')?.crop === 'turnip');
+    await waitFor(() => inv!.bag[2]?.count === 9);
+    await a.leave();
+    await b.leave();
+  });
+
   it('disconnects a client that floods the room with messages', async () => {
     const code = await createWorld();
     const a = await join(code, 8);

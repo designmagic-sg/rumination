@@ -18,6 +18,17 @@ export const PlayerState = schema(
 );
 export type PlayerState = SchemaType<typeof PlayerState>;
 
+/** One tilled tile, as everyone sees it. `crop` is '' when nothing is planted; `stage` 3 means ripe. */
+export const SoilState = schema(
+  {
+    watered: t.boolean(),
+    crop: t.string().default(''),
+    stage: t.number(),
+  },
+  'SoilState',
+);
+export type SoilState = SchemaType<typeof SoilState>;
+
 export const WorldState = schema(
   {
     name: t.string(),
@@ -26,6 +37,8 @@ export const WorldState = schema(
     minute: t.number().default(360),
     /** Keyed by sessionId. */
     players: t.map(PlayerState),
+    /** Tilled farm tiles, keyed "x,y". */
+    soil: t.map(SoilState),
   },
   'WorldState',
 );

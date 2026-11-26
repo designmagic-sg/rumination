@@ -1,3 +1,5 @@
+import type { Slot } from './bag';
+import type { Farm } from './farm';
 import type { ZoneId } from './maps';
 import type { Facing } from './movement';
 import { DAY_START, type Clock } from './time';
@@ -18,6 +20,9 @@ export interface PlayerSave {
   x: number;
   y: number;
   facing: Facing;
+  /** Missing in step-1 saves: the player gets the starting kit. */
+  bag?: Slot[];
+  rumis?: number;
 }
 
 export interface WorldSave {
@@ -30,6 +35,8 @@ export interface WorldSave {
   banned: string[];
   /** When the last player left (ms since epoch), for step 2's catch-up; null while anyone is online. */
   emptySince: number | null;
+  /** Tilled tiles on the farm. Missing in step-1 saves. */
+  farm?: Farm;
 }
 
 export function newWorldSave(code: string, name: string, ownerKey: string): WorldSave {

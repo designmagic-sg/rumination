@@ -65,6 +65,20 @@ export class WorldRoom extends Room<{ state: WorldState }> {
         victim.leave(CLOSE_KICKED);
       }
     });
+    const act = (client: Client, r: { ok: boolean; toast?: string }) => {
+      if (r.toast) client.send('toast', r.toast);
+      this.sendInventory(client);
+    };
+    // The client says when it's listening; the join-time inventory message can arrive before that.
+    this.onMessage('ready', client => this.sendInventory(client));
+    this.onMessage('use', (client, msg) => act(client, this.sim.farmAction(client.sessionId, msg)));
+    this.onMessage('buy', (client, msg) => act(client, this.sim.buy(client.sessionId, msg)));
+    this.onMessage('sell', (client, msg) => act(client, this.sim.sell(client.sessionId, msg)));
+    this.onMessage('swap', (client, msg) => {
+      const m = (msg ?? {}) as { a?: unknown; b?: unknown };
+      this.sim.swap(client.sessionId, m.a, m.b);
+      this.sendInventory(client);
+    });
     this.onMessage('*', () => {});
 
     this.setSimulationInterval(delta => {
@@ -78,6 +92,7 @@ export class WorldRoom extends Room<{ state: WorldState }> {
     if (!isPlayerKey(options?.playerKey)) throw new ServerError(400, 'BAD_KEY');
     const r = this.sim.join(client.sessionId, options.playerKey, options.nickname, options.species);
     if (!r.ok) throw new ServerError(403, r.error);
+    this.sendInventory(client);
     if (r.replaced) {
       const old = this.clients.get(r.replaced);
       if (old) {
@@ -85,6 +100,12 @@ export class WorldRoom extends Room<{ state: WorldState }> {
         old.leave(CLOSE_REPLACED);
       }
     }
+  }
+
+  /** A player's bag and purse go to them alone. */
+  private sendInventory(client: Client) {
+    const inv = this.sim.inventoryOf(client.sessionId);
+    if (inv) client.send('inventory', inv);
   }
 
   onLeave(client: Client) {

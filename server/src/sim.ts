@@ -1,5 +1,26 @@
 import {
+  CROPS,
   FACINGS,
+  GAME_DAY_MS,
+  ITEMS,
+  STARTING_RUMIS,
+  OBJECT_FOOTPRINT,
+  addItem,
+  catchUp,
+  cleanBag,
+  cropOfSeed,
+  cropStage,
+  harvest,
+  isItemId,
+  newBag,
+  nextDay,
+  plant,
+  removeItem,
+  swapSlots,
+  till,
+  water,
+  type Farm,
+  type Slot,
   MAX_PLAYERS,
   TILE,
   ZONES,
@@ -18,13 +39,21 @@ import {
   type WorldSave,
   type ZoneId,
 } from '@ruminate/shared';
-import { PlayerState, type WorldState } from './schema';
+import { PlayerState, SoilState, type WorldState } from './schema';
 
 export type JoinResult =
   | { ok: true; replaced?: string }
   | { ok: false; error: 'BANNED' | 'BAD_NAME' | 'BAD_SPECIES' | 'WORLD_FULL' };
 export type MoveResult = { ok: true } | { ok: false; snapTo: { zone: ZoneId; x: number; y: number } };
 export type TickEvent = 'new-day' | 'fainted';
+export type ActionResult = { ok: true; toast?: string } | { ok: false; toast?: string };
+
+/** The shop is open from 08:00 to 18:00. */
+const SHOP_OPEN = 8 * 60;
+const SHOP_CLOSE = 18 * 60;
+/** How far from the stall (in tiles) you can trade. */
+const SHOP_REACH = 3;
+const MAX_TRADE = 99;
 
 /** How close to the house door you must stand to go to bed, in pixels. */
 const BED_REACH = 1.5 * TILE;
@@ -35,6 +64,9 @@ interface Session {
   lastMoveAt: number;
   /** Pixels this player may still walk: refills at MOVE_ALLOWANCE per second, up to MOVE_BURST. */
   budget: number;
+  /** Private to this player: sent to them alone, never synced. */
+  bag: Slot[];
+  rumis: number;
 }
 
 /**
@@ -43,6 +75,7 @@ interface Session {
  */
 export class WorldSim {
   private sessions = new Map<string, Session>();
+  private farm: Farm;
 
   constructor(
     private state: WorldState,
@@ -53,6 +86,45 @@ export class WorldSim {
     state.code = save.code;
     state.day = save.clock.day;
     state.minute = save.clock.minute;
+    let farm = save.farm ?? {};
+    // Catch up on growth while the world was empty, keeping any part-day for next time.
+    if (save.emptySince != null) {
+      const elapsed = now() - save.emptySince;
+      const days = Math.floor(Math.max(0, elapsed) / GAME_DAY_MS);
+      if (days > 0) {
+        farm = catchUp(farm, elapsed);
+        save.emptySince += days * GAME_DAY_MS;
+      }
+    }
+    this.farm = farm;
+    for (const k of Object.keys(farm)) this.syncSoil(k);
+  }
+
+  private syncSoil(k: string) {
+    const plot = this.farm[k];
+    if (!plot) {
+      this.state.soil.delete(k);
+      return;
+    }
+    let s = this.state.soil.get(k);
+    if (!s) {
+      s = new SoilState();
+      this.state.soil.set(k, s);
+    }
+    s.watered = plot.watered;
+    s.crop = plot.crop?.id ?? '';
+    s.stage = plot.crop ? cropStage(plot.crop) : 0;
+  }
+
+  private setFarm(next: Farm) {
+    const keys = new Set([...Object.keys(this.farm), ...Object.keys(next)]);
+    this.farm = next;
+    for (const k of keys) this.syncSoil(k);
+  }
+
+  inventoryOf(sessionId: string): { bag: Slot[]; rumis: number } | null {
+    const s = this.sessions.get(sessionId);
+    return s ? { bag: s.bag.map(x => (x ? { ...x } : null)), rumis: s.rumis } : null;
   }
 
   onlineCount(): number {
@@ -90,24 +162,20 @@ export class WorldSim {
     p.facing = start.facing;
     p.isOwner = playerKey === this.save.ownerKey;
     this.state.players.set(sessionId, p);
-    this.sessions.set(sessionId, { key: playerKey, lastMoveAt: this.now(), budget: MOVE_BURST });
+    const rumis = saved?.rumis;
+    this.sessions.set(sessionId, {
+      key: playerKey,
+      lastMoveAt: this.now(),
+      budget: MOVE_BURST,
+      bag: cleanBag(saved?.bag) ?? newBag(),
+      rumis: Number.isInteger(rumis) && rumis! >= 0 ? rumis! : STARTING_RUMIS,
+    });
     this.save.emptySince = null;
     return replaced ? { ok: true, replaced } : { ok: true };
   }
 
   leave(sessionId: string): void {
-    const s = this.sessions.get(sessionId);
-    const p = this.state.players.get(sessionId);
-    if (s && p) {
-      this.save.players[s.key] = {
-        nickname: p.nickname,
-        species: p.species as Species,
-        zone: p.zone as ZoneId,
-        x: p.x,
-        y: p.y,
-        facing: p.facing as Facing,
-      };
-    }
+    this.writePlayer(sessionId);
     this.sessions.delete(sessionId);
     this.state.players.delete(sessionId);
     if (this.sessions.size === 0) this.save.emptySince = this.now();
@@ -213,26 +281,137 @@ export class WorldSim {
     const next = startNextDay({ day: this.state.day, minute: this.state.minute });
     this.state.day = next.day;
     this.state.minute = next.minute;
+    this.setFarm(nextDay(this.farm));
     this.state.players.forEach(p => {
       p.inBed = false;
       p.emote = '';
     });
   }
 
-  toSave(): WorldSave {
-    for (const [sid, s] of this.sessions) {
-      const p = this.state.players.get(sid);
-      if (p) {
-        this.save.players[s.key] = {
-          nickname: p.nickname,
-          species: p.species as Species,
-          zone: p.zone as ZoneId,
-          x: p.x,
-          y: p.y,
-          facing: p.facing as Facing,
-        };
-      }
+  private writePlayer(sessionId: string) {
+    const s = this.sessions.get(sessionId);
+    const p = this.state.players.get(sessionId);
+    if (!s || !p) return;
+    this.save.players[s.key] = {
+      nickname: p.nickname,
+      species: p.species as Species,
+      zone: p.zone as ZoneId,
+      x: p.x,
+      y: p.y,
+      facing: p.facing as Facing,
+      bag: s.bag,
+      rumis: s.rumis,
+    };
+  }
+
+  /** Use the item in `slot` on tile (x, y): harvest a ripe crop, or till, water or plant. */
+  farmAction(sessionId: string, msg: unknown): ActionResult {
+    const s = this.sessions.get(sessionId);
+    const p = this.state.players.get(sessionId);
+    if (!s || !p || typeof msg !== 'object' || msg === null) return { ok: false };
+    const { x, y, slot } = msg as Record<string, unknown>;
+    if (![x, y, slot].every(Number.isInteger)) return { ok: false };
+    const tx = x as number, ty = y as number, i = slot as number;
+    if (i < 0 || i >= s.bag.length || p.zone !== 'farm') return { ok: false };
+    // Within reach: the target tile touches the tile under the player's feet.
+    if (Math.abs(tx - Math.floor(p.x / TILE)) > 1 || Math.abs(ty - Math.floor(p.y / TILE)) > 1) return { ok: false };
+
+    const ripe = harvest(this.farm, tx, ty);
+    if (ripe) {
+      const bag = addItem(s.bag, ripe.item, 1);
+      if (!bag) return { ok: false, toast: 'Your bag is full.' };
+      s.bag = bag;
+      this.setFarm(ripe.farm);
+      return { ok: true, toast: `+1 ${ITEMS[ripe.item].name}` };
     }
+
+    const held = s.bag[i];
+    if (!held) return { ok: false };
+    if (held.item === 'hoe') {
+      const f = till(this.farm, ZONES.farm, tx, ty);
+      if (!f) return { ok: false };
+      this.setFarm(f);
+      return { ok: true };
+    }
+    if (held.item === 'can') {
+      const f = water(this.farm, tx, ty);
+      if (!f) return { ok: false };
+      this.setFarm(f);
+      return { ok: true };
+    }
+    const crop = cropOfSeed(held.item);
+    if (crop) {
+      const f = plant(this.farm, tx, ty, crop);
+      const bag = f && removeItem(s.bag, i, 1);
+      if (!f || !bag) return { ok: false };
+      s.bag = bag;
+      this.setFarm(f);
+      return { ok: true };
+    }
+    return { ok: false };
+  }
+
+  /** Is this player at the open market stall? Returns a reason when not. */
+  private atShop(sessionId: string): string | null {
+    const p = this.state.players.get(sessionId);
+    if (!p || p.zone !== 'market') return 'You need to be at the market stall.';
+    const stall = ZONES.market.objects.find(o => o.kind === 'stall')!;
+    const fp = OBJECT_FOOTPRINT.stall;
+    const tx = Math.floor(p.x / TILE), ty = Math.floor(p.y / TILE);
+    const dx = Math.max(stall.x - tx, 0, tx - (stall.x + fp.w - 1));
+    const dy = Math.max(stall.y - ty, 0, ty - (stall.y + fp.h - 1));
+    if (Math.max(dx, dy) > SHOP_REACH) return 'You need to be at the market stall.';
+    const m = Math.floor(this.state.minute) % 1440;
+    if (m < SHOP_OPEN || m >= SHOP_CLOSE) return 'The stall opens at 08:00.';
+    return null;
+  }
+
+  buy(sessionId: string, msg: unknown): ActionResult {
+    const s = this.sessions.get(sessionId);
+    if (!s || typeof msg !== 'object' || msg === null) return { ok: false };
+    const { item, count } = msg as Record<string, unknown>;
+    if (!isItemId(item) || !Number.isInteger(count) || (count as number) < 1 || (count as number) > MAX_TRADE) return { ok: false };
+    const crop = cropOfSeed(item);
+    if (!crop) return { ok: false };
+    const closed = this.atShop(sessionId);
+    if (closed) return { ok: false, toast: closed };
+    const cost = CROPS[crop].seedPrice * (count as number);
+    if (cost > s.rumis) return { ok: false, toast: 'Not enough Rumis.' };
+    const bag = addItem(s.bag, item, count as number);
+    if (!bag) return { ok: false, toast: 'Your bag is full.' };
+    s.bag = bag;
+    s.rumis -= cost;
+    return { ok: true };
+  }
+
+  sell(sessionId: string, msg: unknown): ActionResult {
+    const s = this.sessions.get(sessionId);
+    if (!s || typeof msg !== 'object' || msg === null) return { ok: false };
+    const { slot, count } = msg as Record<string, unknown>;
+    if (!Number.isInteger(slot) || !Number.isInteger(count) || (count as number) < 1 || (count as number) > MAX_TRADE) return { ok: false };
+    const held = s.bag[slot as number];
+    if (!held || ITEMS[held.item].kind !== 'crop') return { ok: false };
+    const closed = this.atShop(sessionId);
+    if (closed) return { ok: false, toast: closed };
+    const bag = removeItem(s.bag, slot as number, count as number);
+    if (!bag) return { ok: false };
+    s.bag = bag;
+    s.rumis += CROPS[held.item as keyof typeof CROPS].sellPrice * (count as number);
+    return { ok: true };
+  }
+
+  swap(sessionId: string, a: unknown, b: unknown): boolean {
+    const s = this.sessions.get(sessionId);
+    if (!s || !Number.isInteger(a) || !Number.isInteger(b)) return false;
+    const bag = swapSlots(s.bag, a as number, b as number);
+    if (!bag) return false;
+    s.bag = bag;
+    return true;
+  }
+
+  toSave(): WorldSave {
+    for (const sid of this.sessions.keys()) this.writePlayer(sid);
+    this.save.farm = this.farm;
     this.save.clock = { day: this.state.day, minute: this.state.minute };
     this.save.emptySince = this.sessions.size === 0 ? (this.save.emptySince ?? this.now()) : null;
     return structuredClone(this.save);

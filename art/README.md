@@ -27,3 +27,4 @@ Some art is generated with Higgsfield (GPT Image 2.6), with Ding's sheet and the
 | Sheet | Rows | Columns |
 |---|---|---|
 | `crops.png` | turnip, carrot, potato, strawberry, tulip, sunflower | stage0, stage1, stage2, ripe, item |
+| `items.png` | hoe, can, seed bags (turnip, carrot) | seed bags (potato, strawberry, tulip, sunflower) |

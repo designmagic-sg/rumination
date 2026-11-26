@@ -18,15 +18,18 @@ from make_sprites import cut_out, despeckle, downsample, grid_size, palette, pla
 
 ROOT = Path(__file__).resolve().parent.parent
 
-# sheet file -> (output folder, row names, column names). Generated with Higgsfield, Ding's sheet as style reference.
+# sheet file -> (output folder, row names, column names, optional flat list of file names in reading order).
+# Generated with Higgsfield, Ding's sheet (and the tiles) as style references.
 SHEETS = {
     'crops': ('crops',
               ['turnip', 'carrot', 'potato', 'strawberry', 'tulip', 'sunflower'],
-              ['stage0', 'stage1', 'stage2', 'ripe', 'item']),
+              ['stage0', 'stage1', 'stage2', 'ripe', 'item'], None),
+    'items': ('items', ['row1', 'row2'], ['a', 'b', 'c', 'd'],
+              ['hoe', 'can', 'seed-turnip', 'seed-carrot', 'seed-potato', 'seed-strawberry', 'seed-tulip', 'seed-sunflower']),
 }
 
 
-def run(sheet, folder, rows, cols):
+def run(sheet, folder, rows, cols, names=None):
     src = np.asarray(Image.open(ROOT / 'art' / 'source' / f'{sheet}.png').convert('RGBA'))
     h, w = src.shape[:2]
     cuts = []
@@ -46,7 +49,8 @@ def run(sheet, folder, rows, cols):
     for i, s in enumerate(smalls):
         r, c = divmod(i, len(cols))
         img = place(to_rgba(s, pal), cw, ch)
-        Image.fromarray(img, 'RGBA').save(out / f'{rows[r]}-{cols[c]}.png', optimize=True)
+        name = names[i] if names else f'{rows[r]}-{cols[c]}'
+        Image.fromarray(img, 'RGBA').save(out / f'{name}.png', optimize=True)
         imgs.append(img)
     scale = 4
     contact = Image.new('RGBA', ((cw + 3) * len(cols) * scale, (ch + 3) * len(rows) * scale), (185, 209, 147, 255))
@@ -60,5 +64,7 @@ def run(sheet, folder, rows, cols):
 
 
 if __name__ == '__main__':
-    for sheet, (folder, rows, cols) in SHEETS.items():
-        run(sheet, folder, rows, cols)
+    only = sys.argv[1:]
+    for sheet, (folder, rows, cols, names) in SHEETS.items():
+        if not only or sheet in only:
+            run(sheet, folder, rows, cols, names)

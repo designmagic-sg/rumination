@@ -24,7 +24,7 @@ OUT = ROOT / 'client' / 'public' / 'tiles'
 CONTACT = ROOT / 'art' / 'out' / 'tiles-contact.png'
 
 # Frame order of tiles.png; client/src/game/tiles.ts must match.
-TILE_FRAMES = ['grass', 'grass2', 'flowers', 'path', 'plot', 'water1', 'water2', 'fence', 'bush', 'bridge']
+TILE_FRAMES = ['grass', 'grass2', 'flowers', 'path', 'plot', 'water1', 'water2', 'fence', 'bush', 'bridge', 'soil', 'soil-wet']
 
 
 def hx(s):
@@ -46,6 +46,8 @@ C = {k: hx(v) for k, v in {
     'lilac': '#ABA5CB', 'lilac_d': '#8B84B3', 'lilac_l': '#C9C4E2',
     'pink': '#F4AABD', 'gold': '#F2C14E', 'gold_d': '#D49A33', 'warm': '#FFD27A',
     'glass': '#BFD0EF', 'glass_d': '#9FB1DD', 'dark': '#5A3A4C',
+    'soil': '#B07A5C', 'soil_d': '#8F5E47', 'soil_l': '#C9967A',
+    'wet': '#7E5444', 'wet_d': '#63402F', 'wet_l': '#9A6A57',
     'stone': '#BDB4C4', 'stone_d': '#9C92A8', 'stone_l': '#D8D1DE',
     'orange': '#F09A55', 'red': '#E2665E', 'green': '#8CC06A',
 }.items()}
@@ -235,6 +237,22 @@ def bridge():
     return cv
 
 
+def soil(wet=False):
+    """Tilled earth: a square bed with furrows, inset 1 px so neighbouring beds read as separate rows."""
+    base, dark, light = (C['wet'], C['wet_d'], C['wet_l']) if wet else (C['soil'], C['soil_d'], C['soil_l'])
+    cv = Canvas(16, 16)
+    cv.rect(1, 1, 14, 14, base)
+    cv.hline(1, 14, 1, light)
+    cv.hline(1, 14, 14, dark)
+    cv.vline(14, 1, 14, dark)
+    for y in (5, 9, 12):
+        cv.hline(3, 12, y, dark)
+        cv.hline(3, 12, y - 1, light)
+    if wet:
+        cv.set(4, 3, C['water_l']); cv.set(10, 7, C['water_l']); cv.set(6, 11, C['water_l'])
+    return cv
+
+
 # ---------- props (outlined) ----------
 
 def window(cv, x, y, lit):
@@ -415,7 +433,8 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     CONTACT.parent.mkdir(parents=True, exist_ok=True)
     frames = {'grass': grass(1), 'grass2': grass(2), 'flowers': flowers(), 'path': path(), 'plot': plot(),
-              'water1': water(0), 'water2': water(1), 'fence': fence(), 'bush': bush(), 'bridge': bridge()}
+              'water1': water(0), 'water2': water(1), 'fence': fence(), 'bush': bush(), 'bridge': bridge(),
+              'soil': soil(), 'soil-wet': soil(True)}
     assert list(frames) == TILE_FRAMES
     strip = Canvas(16 * len(frames), 16)
     for i, name in enumerate(TILE_FRAMES):

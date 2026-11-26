@@ -6,6 +6,7 @@ Everything is pixel art in the style of the four character sheets: a 1 px dark p
 |---|---|---|
 | `make_sprites.py` | `source/{ding,chime,jingle,gong}.webp`, the 4 × 2 pose sheets | `client/public/sprites/<species>-<pose>.png` (32 sprites) and `out/contact.png` |
 | `make_sheets.py` | generated grid sheets in `source/` (e.g. `crops.png`, made with Higgsfield using Ding's sheet and the tiles as style references) | `client/public/<folder>/<row>-<column>.png` and `out/<sheet>-contact.png` |
+| `make_walks.py` | `source/walk-<species>.png`, 3 × 4 walk-cycle sheets generated with Higgsfield from each character's own sheet | `client/public/sprites/<species>-walk-<down\|side\|up>-<0..3>.png`, scaled to match each character's poses, and `out/walks-contact.png` |
 | `make_tiles.py` | nothing (the art is drawn in code) | `client/public/tiles/tiles.png`, the props, and `out/tiles-contact.png` |
 
 Run them from the repo root (they need `numpy` and `Pillow`):

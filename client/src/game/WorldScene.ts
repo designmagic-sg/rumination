@@ -28,7 +28,10 @@ export interface WorldSceneData {
   hud: Hud;
 }
 
-const POSES = ['front', 'threeq', 'side', 'back', 'walk', 'jump', 'sit', 'sleep'];
+const POSES = [
+  'front', 'threeq', 'side', 'back', 'walk', 'jump', 'sit', 'sleep',
+  ...['down', 'side', 'up'].flatMap(dir => [0, 1, 2, 3].map(i => `walk-${dir}-${i}`)),
+];
 const PROPS = ['house', 'house-lit', 'shed', 'stall', 'board', 'sign', 'lamp', 'lamp-lit', 'tree', 'rock'];
 const ZOOM = 3;
 const SEND_EVERY_MS = 66;

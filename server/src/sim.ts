@@ -16,6 +16,7 @@ import {
   nextDay,
   plant,
   removeItem,
+  shopIsOpen,
   swapSlots,
   till,
   water,
@@ -48,9 +49,6 @@ export type MoveResult = { ok: true } | { ok: false; snapTo: { zone: ZoneId; x: 
 export type TickEvent = 'new-day' | 'fainted';
 export type ActionResult = { ok: true; toast?: string } | { ok: false; toast?: string };
 
-/** The shop is open from 08:00 to 18:00. */
-const SHOP_OPEN = 8 * 60;
-const SHOP_CLOSE = 18 * 60;
 /** How far from the stall (in tiles) you can trade. */
 const SHOP_REACH = 3;
 const MAX_TRADE = 99;
@@ -314,7 +312,9 @@ export class WorldSim {
     const tx = x as number, ty = y as number, i = slot as number;
     if (i < 0 || i >= s.bag.length || p.zone !== 'farm') return { ok: false };
     // Within reach: the target tile touches the tile under the player's feet.
-    if (Math.abs(tx - Math.floor(p.x / TILE)) > 1 || Math.abs(ty - Math.floor(p.y / TILE)) > 1) return { ok: false };
+    if (Math.abs(tx - Math.floor(p.x / TILE)) > 1 || Math.abs(ty - Math.floor(p.y / TILE)) > 1) {
+      return { ok: false, toast: 'Too far away. Stand next to the tile.' };
+    }
 
     const ripe = harvest(this.farm, tx, ty);
     if (ripe) {
@@ -326,21 +326,25 @@ export class WorldSim {
     }
 
     const held = s.bag[i];
-    if (!held) return { ok: false };
+    if (!held) return { ok: false, toast: 'Pick a tool or seeds from your toolbar first.' };
+    const plot = this.farm[`${tx},${ty}`];
     if (held.item === 'hoe') {
+      if (plot) return { ok: false, toast: 'That soil is already tilled.' };
       const f = till(this.farm, ZONES.farm, tx, ty);
-      if (!f) return { ok: false };
+      if (!f) return { ok: false, toast: 'You can only dig on the farm plot.' };
       this.setFarm(f);
       return { ok: true };
     }
     if (held.item === 'can') {
       const f = water(this.farm, tx, ty);
-      if (!f) return { ok: false };
+      if (!f) return { ok: false, toast: 'Till the soil first.' };
       this.setFarm(f);
       return { ok: true };
     }
     const crop = cropOfSeed(held.item);
     if (crop) {
+      if (!plot) return { ok: false, toast: 'Till the soil first.' };
+      if (plot.crop) return { ok: false, toast: 'Something is already growing here.' };
       const f = plant(this.farm, tx, ty, crop);
       const bag = f && removeItem(s.bag, i, 1);
       if (!f || !bag) return { ok: false };
@@ -348,7 +352,7 @@ export class WorldSim {
       this.setFarm(f);
       return { ok: true };
     }
-    return { ok: false };
+    return { ok: false, toast: 'Use a hoe, the watering can or seeds here.' };
   }
 
   /** Is this player at the open market stall? Returns a reason when not. */
@@ -361,8 +365,7 @@ export class WorldSim {
     const dx = Math.max(stall.x - tx, 0, tx - (stall.x + fp.w - 1));
     const dy = Math.max(stall.y - ty, 0, ty - (stall.y + fp.h - 1));
     if (Math.max(dx, dy) > SHOP_REACH) return 'You need to be at the market stall.';
-    const m = Math.floor(this.state.minute) % 1440;
-    if (m < SHOP_OPEN || m >= SHOP_CLOSE) return 'The stall opens at 08:00.';
+    if (!shopIsOpen(this.state.minute)) return 'The stall opens at 08:00.';
     return null;
   }
 
@@ -393,6 +396,7 @@ export class WorldSim {
     if (!held || ITEMS[held.item].kind !== 'crop') return { ok: false };
     const closed = this.atShop(sessionId);
     if (closed) return { ok: false, toast: closed };
+    if ((count as number) > held.count) return { ok: false, toast: "You don't have that many." };
     const bag = removeItem(s.bag, slot as number, count as number);
     if (!bag) return { ok: false };
     s.bag = bag;

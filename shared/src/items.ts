@@ -55,3 +55,11 @@ export function isCropId(v: unknown): v is CropId {
 export function cropOfSeed(item: ItemId): CropId | null {
   return item.startsWith('seed-') ? (item.slice(5) as CropId) : null;
 }
+
+/** The market stall's hours, in minutes after midnight: 08:00 to 18:00. */
+export const SHOP_OPEN = 8 * 60;
+export const SHOP_CLOSE = 18 * 60;
+export function shopIsOpen(minute: number): boolean {
+  const m = Math.floor(minute) % 1440;
+  return m >= SHOP_OPEN && m < SHOP_CLOSE;
+}

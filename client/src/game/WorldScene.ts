@@ -172,6 +172,8 @@ export class WorldScene extends Phaser.Scene {
   private useTarget() {
     if (!this.ready || this.zone.id !== 'farm') return;
     const t = this.targetTile();
+    // Only when the cursor is on the farm plot: clicking into the game elsewhere does nothing.
+    if (this.zone.rows[t.y]?.[t.x] !== ':') return;
     this.room.send('use', { x: t.x, y: t.y, slot: this.inventory.selected });
   }
 
@@ -301,7 +303,7 @@ export class WorldScene extends Phaser.Scene {
       this.hud.setPrompt('E', 'Go to bed');
       if (pressed) this.room.send('bed');
     } else if (nearStall && !this.shop.open) {
-      this.hud.setPrompt('E', 'Open the shop');
+      this.hud.setPrompt('E', this.shop.isOpen ? 'Open the shop' : 'Shop (opens at 08:00)');
       if (pressed) this.shop.show();
     } else {
       this.hud.setPrompt(null);
@@ -377,6 +379,7 @@ export class WorldScene extends Phaser.Scene {
     this.hud.setTime(formatClock({ day: state.day, minute: state.minute }));
     this.clockView.set({ day: state.day, minute: state.minute });
     this.night.set(state.minute);
+    this.shop.setTime(state.minute);
     this.sinceList += delta;
     if (this.sinceList > 250 && this.hud.playersOpen) {
       this.sinceList = 0;

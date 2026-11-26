@@ -1,4 +1,4 @@
-import { CROPS, CROP_IDS, ITEMS, type Slot } from '@ruminate/shared';
+import { CROPS, CROP_IDS, ITEMS, shopIsOpen, type Slot } from '@ruminate/shared';
 
 /** The market stall: buy seeds, sell crops. The server checks hours, reach and money. */
 export function mountShop(parent: HTMLElement, actions: { buy(item: string, count: number): void; sell(slot: number, count: number): void }) {
@@ -8,6 +8,7 @@ export function mountShop(parent: HTMLElement, actions: { buy(item: string, coun
   parent.append(panel);
   let bag: Slot[] = [];
   let rumis = 0;
+  let open = true;
 
   function button(text: string, disabled: boolean, onClick: () => void) {
     const b = document.createElement('button');
@@ -41,6 +42,13 @@ export function mountShop(parent: HTMLElement, actions: { buy(item: string, coun
     const h = document.createElement('h2');
     h.textContent = 'Market stall';
     head.append(h, button('Close', false, () => api.close()));
+    if (!open) {
+      const note = document.createElement('p');
+      note.className = 'bag-hint';
+      note.textContent = 'The stall is closed. It opens at 08:00 and closes at 18:00.';
+      panel.append(head, note);
+      return;
+    }
     const buyH = document.createElement('h3');
     buyH.textContent = 'Buy seeds';
     const buyList = document.createElement('ul');
@@ -84,6 +92,17 @@ export function mountShop(parent: HTMLElement, actions: { buy(item: string, coun
     },
     close() {
       panel.hidden = true;
+    },
+    /** Call with the world clock; redraws only when the stall opens or closes. */
+    setTime(minute: number) {
+      const now = shopIsOpen(minute);
+      if (now !== open) {
+        open = now;
+        render();
+      }
+    },
+    get isOpen() {
+      return open;
     },
     set(next: Slot[], money: number) {
       bag = next;

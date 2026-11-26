@@ -182,3 +182,58 @@ describe('saving and catching up', () => {
     expect(s2.soil.get('12,11')).toMatchObject({ crop: 'turnip', stage: 2, watered: true });
   });
 });
+
+describe('review fixes', () => {
+  it('explains honest mistakes', () => {
+    expect(use(2)).toEqual({ ok: false, toast: 'Till the soil first.' });
+    expect(use(1)).toEqual({ ok: false, toast: 'Till the soil first.' });
+    expect(use(0, 12, 9)).toEqual({ ok: false, toast: 'You can only dig on the farm plot.' });
+    expect(use(0, 14, 13)).toEqual({ ok: false, toast: 'Too far away. Stand next to the tile.' });
+    expect(use(7)).toEqual({ ok: false, toast: 'Pick a tool or seeds from your toolbar first.' });
+    use(0);
+    expect(use(0)).toEqual({ ok: false, toast: 'That soil is already tilled.' });
+    use(2);
+    expect(use(2)).toEqual({ ok: false, toast: 'Something is already growing here.' });
+  });
+
+  it('explains selling more than you have', () => {
+    save.players[KEY_B] = { nickname: 'Bo', species: 'chime', zone: 'market', ...at(23, 10), facing: 'up', bag: [{ item: 'carrot', count: 2 }], rumis: 0 };
+    sim.join('s2', KEY_B, 'Bo', 'chime');
+    state.minute = 9 * 60;
+    expect(sim.sell('s2', { slot: 0, count: 3 })).toEqual({ ok: false, toast: "You don't have that many." });
+    expect(sim.sell('s2', { slot: 0, count: 1.5 }).ok).toBe(false);
+    expect(sim.sell('s2', { slot: -1, count: 1 }).ok).toBe(false);
+    expect(rumis('s2')).toBe(0);
+  });
+
+  it('takes no Rumis when the bag is full', () => {
+    save.players[KEY_B] = {
+      nickname: 'Bo', species: 'chime', zone: 'market', ...at(23, 10), facing: 'up',
+      bag: Array.from({ length: BAG_SIZE }, () => ({ item: 'hoe', count: 1 })), rumis: 100,
+    };
+    sim.join('s2', KEY_B, 'Bo', 'chime');
+    state.minute = 9 * 60;
+    expect(sim.buy('s2', { item: 'seed-turnip', count: 1 })).toEqual({ ok: false, toast: 'Your bag is full.' });
+    expect(rumis('s2')).toBe(100);
+  });
+
+  it('loads a step-1 save with an empty farm', () => {
+    const old = newWorldSave('MOON-4823', 'Old', KEY);
+    delete (old as { farm?: unknown }).farm;
+    const s2 = new WorldState();
+    new WorldSim(s2, old, () => now);
+    expect(s2.soil.size).toBe(0);
+  });
+
+  it('does not grow crops twice when a world is loaded and saved again without anyone joining', () => {
+    save.farm = { '12,11': { watered: true, crop: { id: 'sunflower', days: 0, harvested: 0 } } };
+    save.emptySince = now - 2.5 * GAME_DAY_MS;
+    const first = new WorldSim(new WorldState(), save, () => now).toSave();
+    expect(first.farm!['12,11']!.crop!.days).toBe(2);
+    const s3 = new WorldState();
+    new WorldSim(s3, first, () => now);
+    expect(s3.soil.get('12,11')).toMatchObject({ crop: 'sunflower', stage: 0 });
+    const third = new WorldSim(new WorldState(), first, () => now + 0.6 * GAME_DAY_MS).toSave();
+    expect(third.farm!['12,11']!.crop!.days).toBe(3); // the half day left over counts next time
+  });
+});

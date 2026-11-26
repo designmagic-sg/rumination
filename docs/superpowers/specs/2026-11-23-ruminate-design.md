@@ -210,7 +210,9 @@ Each step is a playable checkpoint.
 | How it's built | A game server (Colyseus) with a Phaser client | Owner |
 | Players per world | Up to 8 | Owner |
 | Time when no one's online | The clock pauses; crops and restocking catch up on the time that passed (§6.5) | Owner |
-| What friends share | Farm and quests shared; coins, bag and tools each player's own | Claude's call, to confirm |
+| What friends share | Farm and quests shared; coins, bag and tools each player's own | Owner (confirmed 26 Nov) |
+| Art | All art matches the pixel characters; new sheets are generated with Higgsfield using the character sheets as style references, then cleaned into true pixels | Owner |
+| Walking | 4-frame walk cycles per direction, generated with Higgsfield | Owner |
 | Name | **RumiNation**; the currency is the **Rumi** | Owner |
 | Top gear | A 4th hunting tool, the **golden spear**, and a 4th rod, the **diamond rod** | Owner |
 | Final crop | **Rafflesia** | Owner |

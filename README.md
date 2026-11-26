@@ -2,13 +2,17 @@
 
 A cosy 2D farming game you play in the browser with friends. Create a world, send your friends its code (like `MOON-4823`), pick Ding, Chime, Jingle or Gong, and explore the farm together. Up to 8 players share a world, and it's saved on the server.
 
-**Step 1 of 6 is done: walking together.** You can:
+**Steps 1 and 2 of 6 are done: walking together, and farming.** You can:
 - create a world or join one by code
 - walk the Farm and the Market Path with your friends
+- till the farm plot, plant seeds, water them, and harvest the crops as they grow each morning (they keep growing while nobody's online, if you watered them before you left)
+- sell your harvest at the market stall (open 08:00–18:00) for Rumis, and buy more seeds
 - watch day turn to night, and go to bed to start the next day
 - jump, sit and nap
 
-Farming, fishing, hunting, mining and blacksmithing come in the next steps. See the [design](docs/superpowers/specs/2026-11-23-ruminate-design.md) and the [item catalogue](docs/superpowers/specs/2026-11-23-ruminate-catalogue.md).
+Everyone in a world shares the farm; your bag and your Rumis are your own.
+
+Fishing, hunting, mining and blacksmithing come in the next steps. See the [design](docs/superpowers/specs/2026-11-23-ruminate-design.md) and the [item catalogue](docs/superpowers/specs/2026-11-23-ruminate-catalogue.md).
 
 ## Run it
 
@@ -46,7 +50,9 @@ The server then hosts the game itself on http://localhost:2567, on a single port
 | Key | Does |
 |---|---|
 | WASD or arrow keys | Walk |
-| E or Space | Use (go to bed at the house door) |
+| E, Space or click | Use the selected item on the tile in front of you (till, water, plant, harvest); go to bed at the house door; open the shop at the stall |
+| 1–9 or mouse wheel | Pick a toolbar slot |
+| Tab | Open your bag (click two slots to swap them) |
 | Z / X / C | Jump / sit / nap |
 | P | Players in this world (the owner can remove someone) |
 

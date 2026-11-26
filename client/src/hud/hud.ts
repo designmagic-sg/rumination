@@ -57,7 +57,7 @@ export function mountHud(parent: HTMLElement, world: { name: string; code: strin
   const help = document.createElement('div');
   help.className = 'help';
   help.innerHTML =
-    '<kbd>WASD</kbd> move · <kbd>E</kbd> use · <kbd>Z</kbd> jump · <kbd>X</kbd> sit · <kbd>C</kbd> nap · <kbd>P</kbd> players';
+    '<kbd>WASD</kbd> move · <kbd>E</kbd>/click use · <kbd>1–9</kbd> pick · <kbd>Tab</kbd> bag · <kbd>Z</kbd><kbd>X</kbd><kbd>C</kbd> emotes · <kbd>P</kbd> players';
 
   const panel = document.createElement('section');
   panel.className = 'players-panel';
@@ -75,6 +75,8 @@ export function mountHud(parent: HTMLElement, world: { name: string; code: strin
   };
 
   const api = {
+    /** The HUD layer, for panels that mount themselves. */
+    root: hud,
     clockSlot,
     toasts,
     setWorldName(text: string) {

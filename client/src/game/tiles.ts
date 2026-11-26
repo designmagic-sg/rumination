@@ -10,6 +10,8 @@ export const TILE_FRAMES = {
   fence: 7,
   bush: 8,
   bridge: 9,
+  soil: 10,
+  'soil-wet': 11,
 } as const;
 
 /** Which frame a map character draws as. Grass alternates between two looks so it doesn't repeat. */

@@ -10,6 +10,7 @@ import {
   formatClock,
   stepPlayer,
   type Facing,
+  type Slot,
   type Input,
   type Pos,
   type Species,
@@ -18,6 +19,9 @@ import {
 } from '@ruminate/shared';
 import type { Hud } from '../hud/hud';
 import { mountClock } from '../hud/clock';
+import { mountInventory, type Inventory } from '../hud/inventory';
+import { mountShop, type Shop } from '../hud/shop';
+import { mountFarmView, preloadFarm } from './farmView';
 import { mountNight } from './night';
 import { PlayerView, type PlayerLook } from './players';
 import { TILE_FRAMES, frameFor } from './tiles';
@@ -37,6 +41,9 @@ const ZOOM = 3;
 const SEND_EVERY_MS = 66;
 const INTERP_DELAY_MS = 100;
 const BED_REACH = 1.5 * TILE;
+/** Tiles from the stall's footprint where the shop opens (the server checks the same). */
+const SHOP_REACH = 3;
+const FACING_STEP: Record<Facing, [number, number]> = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] };
 
 /** The synced player fields this scene reads. */
 interface PlayerStateLike extends PlayerLook {
@@ -74,11 +81,16 @@ export class WorldScene extends Phaser.Scene {
   private waterClock = 0;
   private sinceList = 0;
   private wasInBed = false;
+  /** Set by the browser's keydown for E or Space, used once by the next frame. */
+  private actionPressed = false;
   private nameShown = false;
   /** The current zone's props, so night.ts can light windows and lamps. */
   readonly props: Phaser.GameObjects.Image[] = [];
   private night!: ReturnType<typeof mountNight>;
   private clockView!: ReturnType<typeof mountClock>;
+  private farmView!: ReturnType<typeof mountFarmView>;
+  private inventory!: Inventory;
+  private shop!: Shop;
 
   constructor() {
     super('world');
@@ -94,6 +106,7 @@ export class WorldScene extends Phaser.Scene {
     this.load.image('tiles-img', '/tiles/tiles.png');
     for (const p of PROPS) this.load.image(p, `/tiles/${p}.png`);
     for (const sp of SPECIES) for (const pose of POSES) this.load.image(`${sp}-${pose}`, `/sprites/${sp}-${pose}.png`);
+    preloadFarm(this);
   }
 
   create() {
@@ -103,6 +116,30 @@ export class WorldScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.clockView.destroy());
     const kb = this.input.keyboard!;
     this.keys = kb.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,E,Z,X,C,P,SPACE') as Record<string, Phaser.Input.Keyboard.Key>;
+    this.farmView = mountFarmView(this);
+    this.inventory = mountInventory(this.hud.root, (a, b) => this.room.send('swap', { a, b }));
+    this.shop = mountShop(this.hud.root, {
+      buy: (item, count) => this.room.send('buy', { item, count }),
+      sell: (slot, count) => this.room.send('sell', { slot, count }),
+    });
+    this.room.onMessage('inventory', (inv: { bag: Slot[]; rumis: number }) => {
+      this.inventory.set(inv.bag, inv.rumis);
+      this.shop.set(inv.bag, inv.rumis);
+    });
+    this.input.on('wheel', (_p: unknown, _o: unknown, _dx: number, dy: number) => this.inventory.select(this.inventory.selected + Math.sign(dy)));
+    this.input.on('pointerdown', () => this.useTarget());
+    // Slot keys and Tab come straight from the browser: a quick tap can fall between two game frames.
+    const onKey = (e: KeyboardEvent) => {
+      if (/^Digit[1-9]$/.test(e.code)) this.inventory.select(Number(e.code.slice(5)) - 1);
+      else if ((e.code === 'KeyE' || e.code === 'Space') && !e.repeat) this.actionPressed = true;
+      else if (e.code === 'Tab') {
+        e.preventDefault();
+        this.inventory.toggleBag();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => window.removeEventListener('keydown', onKey));
+    this.events.once(Phaser.Scenes.Events.DESTROY, () => window.removeEventListener('keydown', onKey));
 
     this.room.onMessage('snap', (s: { zone: ZoneId; x: number; y: number }) => {
       if (s.zone !== this.zone?.id) this.buildZone(s.zone);
@@ -115,6 +152,8 @@ export class WorldScene extends Phaser.Scene {
       this.night.morning();
     });
     this.room.onMessage('toast', (t: string) => this.hud.toasts.show(String(t)));
+    // Now that every handler is in place, ask for this player's bag.
+    this.room.send('ready');
 
     if (import.meta.env.DEV) {
       (window as unknown as { __ruminate: unknown }).__ruminate = {
@@ -122,6 +161,29 @@ export class WorldScene extends Phaser.Scene {
         me: () => ({ ...this.me, zone: this.zone?.id }),
       };
     }
+  }
+
+  /** The tile in front of the player's feet. */
+  private targetTile() {
+    const [dx, dy] = FACING_STEP[this.facing];
+    return { x: Math.floor(this.me.x / TILE) + dx, y: Math.floor(this.me.y / TILE) + dy };
+  }
+
+  private useTarget() {
+    if (!this.ready || this.zone.id !== 'farm') return;
+    const t = this.targetTile();
+    this.room.send('use', { x: t.x, y: t.y, slot: this.inventory.selected });
+  }
+
+  private nearStall(): boolean {
+    if (this.zone.id !== 'market') return false;
+    const stall = this.zone.objects.find(o => o.kind === 'stall');
+    if (!stall) return false;
+    const fp = OBJECT_FOOTPRINT.stall;
+    const tx = Math.floor(this.me.x / TILE), ty = Math.floor(this.me.y / TILE);
+    const dx = Math.max(stall.x - tx, 0, tx - (stall.x + fp.w - 1));
+    const dy = Math.max(stall.y - ty, 0, ty - (stall.y + fp.h - 1));
+    return Math.max(dx, dy) <= SHOP_REACH;
   }
 
   private myState(): PlayerStateLike | undefined {
@@ -231,12 +293,26 @@ export class WorldScene extends Phaser.Scene {
     if (J(this.keys.P!)) this.hud.togglePlayers();
     const door = this.zone.houseDoor;
     const nearDoor = !!door && Math.hypot(this.me.x - centre(door).x, this.me.y - centre(door).y) <= BED_REACH;
+    const nearStall = this.nearStall();
+    if (!nearStall && this.shop.open) this.shop.close();
+    const pressed = this.actionPressed;
+    this.actionPressed = false;
     if (nearDoor && !mine.inBed) {
       this.hud.setPrompt('E', 'Go to bed');
-      if (J(this.keys.E!) || J(this.keys.SPACE!)) this.room.send('bed');
+      if (pressed) this.room.send('bed');
+    } else if (nearStall && !this.shop.open) {
+      this.hud.setPrompt('E', 'Open the shop');
+      if (pressed) this.shop.show();
     } else {
       this.hud.setPrompt(null);
+      if (pressed) this.useTarget();
     }
+
+    // Farm: soil, crops, and the cursor on the plot tile in front of you.
+    this.farmView.sync(this.zone, state.soil);
+    const t = this.targetTile();
+    const onPlot = this.zone.id === 'farm' && this.zone.rows[t.y]?.[t.x] === ':';
+    this.farmView.target(onPlot ? t : null);
     if (mine.inBed && !this.wasInBed) this.hud.toasts.show('Sleeping… the day ends when everyone’s in bed', 4500);
     this.wasInBed = mine.inBed;
 

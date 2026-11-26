@@ -23,16 +23,16 @@
 }
 .mini:active { transform: translateY(1px); }
 .prompt {
-  position: absolute; left: 50%; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+  position: absolute; left: 50%; bottom: calc(80px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
   font-size: 18px; background: #fff6ea; border: 3px solid #412234; box-shadow: 0 3px 0 #412234; padding: 4px 12px;
 }
 .prompt kbd { font-family: inherit; background: #f2c14e; border: 2px solid #412234; padding: 0 5px; margin-right: 6px; }
 .help {
-  position: absolute; left: calc(12px + env(safe-area-inset-left, 0px)); bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  position: absolute; left: calc(12px + env(safe-area-inset-left, 0px)); bottom: calc(76px + env(safe-area-inset-bottom, 0px));
   font-size: 14px; background: rgba(255, 246, 234, 0.9); border: 2px solid #412234; padding: 4px 8px; line-height: 1.5;
 }
 .help kbd { font-family: inherit; background: #fae5d0; border: 1px solid #412234; padding: 0 4px; }
-.toasts { position: absolute; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); display: grid; gap: 6px; justify-items: center; }
+.toasts { position: absolute; left: 50%; bottom: calc(124px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); display: grid; gap: 6px; justify-items: center; }
 .toast { font-size: 18px; background: #412234; color: #fff6ea; border: 3px solid #f2c14e; padding: 6px 14px; white-space: nowrap; animation: toast-in 0.15s steps(3); }
 @keyframes toast-in { from { transform: translateY(8px); opacity: 0; } }
 .players-panel {
@@ -46,3 +46,39 @@
 .players-panel li .who { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .players-panel .owner { color: #c3615f; font-size: 13px; }
 @media (prefers-reduced-motion: reduce) { .toast { animation: none; } }
+
+/* Toolbar, bag, purse and shop. */
+.toolbar {
+  position: absolute; left: 50%; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+  display: flex; gap: 4px; padding: 4px; background: #fff6ea; border: 3px solid #412234; box-shadow: 0 3px 0 #412234; pointer-events: auto;
+}
+.slot {
+  position: relative; width: 44px; height: 44px; padding: 3px; background: #fae5d0; border: 2px solid #c9a98f; cursor: pointer;
+  display: grid; place-items: center;
+}
+.slot img { width: 34px; height: 34px; object-fit: contain; image-rendering: pixelated; }
+.slot.selected { border-color: #412234; background: #ffe9a8; outline: 2px solid #f2c14e; outline-offset: -5px; }
+.slot .count { position: absolute; right: 2px; bottom: 0; font-family: "VT323", monospace; font-size: 18px; color: #412234; text-shadow: 1px 1px 0 #fff6ea; }
+.slot .key { position: absolute; left: 3px; top: 0; font-size: 11px; color: #8a6d7a; }
+.bag-panel, .shop-panel {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(440px, calc(100vw - 24px)); max-height: calc(100vh - 140px); overflow: auto;
+  background: #fff6ea; border: 3px solid #412234; box-shadow: 0 5px 0 #412234; padding: 12px 14px; display: grid; gap: 10px; pointer-events: auto;
+}
+.bag-panel h2, .shop-panel h2 { margin: 0; font-size: 20px; }
+.bag-grid { display: grid; grid-template-columns: repeat(6, 44px); gap: 4px; justify-content: center; }
+.bag-hint { margin: 0; font-size: 14px; color: #7a5b68; }
+.purse {
+  position: absolute; top: calc(12px + env(safe-area-inset-top, 0px)); left: calc(12px + env(safe-area-inset-left, 0px));
+  display: flex; align-items: center; gap: 8px; font-family: "VT323", monospace; font-size: 26px; line-height: 1; color: #f4e4be;
+  background: #2a2230; border: 3px solid #f2c14e; box-shadow: 0 3px 0 #412234; padding: 4px 12px 4px 8px;
+}
+.purse canvas { width: 32px; height: 32px; image-rendering: pixelated; }
+.shop-head { display: flex; justify-content: space-between; align-items: center; }
+.shop-panel h3 { margin: 4px 0 0; font-size: 16px; color: #7a5b68; }
+.shop-panel ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.shop-panel li { display: flex; align-items: center; gap: 8px; font-size: 16px; }
+.shop-panel li img { width: 28px; height: 28px; object-fit: contain; image-rendering: pixelated; }
+.shop-panel li .name { flex: 1; min-width: 0; }
+.shop-panel li .price { font-family: "VT323", monospace; font-size: 20px; min-width: 3.5em; text-align: right; }
+.mini:disabled { opacity: 0.45; cursor: not-allowed; }
+.players-panel { top: calc(64px + env(safe-area-inset-top, 0px)); }
